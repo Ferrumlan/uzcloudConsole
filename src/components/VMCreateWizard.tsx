@@ -470,62 +470,128 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
           {currentStep === 6 && (
             <VStack gap="24px" align="stretch">
               <Text fontSize="14px" fontWeight="600" color="gray.700">
-                Сетевые настройки
+                Выберите тип сети
               </Text>
-              <VStack gap="16px" align="stretch">
-                <Box p="20px" borderRadius="12px" bg="gray.50" border="2px solid" borderColor="gray.200">
-                  <VStack gap="12px" align="stretch">
-                    <HStack gap="12px">
-                      <Box p="12px" borderRadius="10px" bg="brand.100" color="brand.600">
-                        <LuNetwork size={24} />
-                      </Box>
-                      <VStack gap="4px" align="start" flex={1}>
-                        <Text fontSize="16px" fontWeight="600" color="gray.900">
-                          Isolated Network + VPC
-                        </Text>
-                        <Text fontSize="13px" color="gray.600">
-                          Изолированная сеть с VPC в регионе {selectedLocation?.region}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  </VStack>
-                </Box>
-
-                <Box 
-                  p="16px" 
-                  borderRadius="12px" 
-                  border="2px solid" 
-                  borderColor={formData.publicIp ? "brand.200" : "gray.200"}
-                  bg={formData.publicIp ? "brand.50" : "white"}
-                  cursor="pointer"
-                  onClick={() => setFormData({ ...formData, publicIp: !formData.publicIp })}
-                  transition="all 0.2s"
-                >
-                  <HStack justify="space-between">
-                    <VStack gap="4px" align="start">
-                      <Text fontSize="14px" fontWeight="600" color="gray.900">
-                        Публичный IP адрес
-                      </Text>
-                      <Text fontSize="13px" color="gray.600">
-                        Назначить публичный IP для доступа из интернета
+              <Grid templateColumns="repeat(2, 1fr)" gap="16px">
+                <GridItem>
+                  <Box
+                    p="20px"
+                    borderRadius="12px"
+                    borderWidth="2px"
+                    borderColor={formData.networkType === 'isolated' ? '#0ea5e9' : 'gray.200'}
+                    bg={formData.networkType === 'isolated' ? '#f0f9ff' : 'white'}
+                    cursor="pointer"
+                    onClick={() => setFormData({ ...formData, networkType: 'isolated' })}
+                    transition="all 0.2s"
+                    _hover={{
+                      borderColor: '#38bdf8',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    }}
+                  >
+                    <VStack gap="12px" align="start">
+                      <HStack gap="12px">
+                        <Box
+                          p="12px"
+                          borderRadius="10px"
+                          bg={formData.networkType === 'isolated' ? 'brand.100' : 'gray.100'}
+                          color={formData.networkType === 'isolated' ? 'brand.600' : 'gray.600'}
+                        >
+                          <LuNetwork size={24} />
+                        </Box>
+                        <VStack gap="4px" align="start">
+                          <Text fontSize="18px" fontWeight="700" color="gray.900">
+                            Isolated
+                          </Text>
+                          <Text fontSize="13px" color="gray.600">
+                            Изолированная приватная сеть
+                          </Text>
+                        </VStack>
+                      </HStack>
+                      <Text fontSize="12px" color="gray.500">
+                        Полная изоляция, доступ только через VPN или bastion host
                       </Text>
                     </VStack>
-                    <Box
-                      w="24px"
-                      h="24px"
-                      borderRadius="6px"
-                      border="2px solid"
-                      borderColor={formData.publicIp ? "brand.500" : "gray.300"}
-                      bg={formData.publicIp ? "brand.500" : "white"}
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      {formData.publicIp && <LuCheck size={16} color="white" />}
-                    </Box>
-                  </HStack>
-                </Box>
-              </VStack>
+                  </Box>
+                </GridItem>
+
+                <GridItem>
+                  <Box
+                    p="20px"
+                    borderRadius="12px"
+                    borderWidth="2px"
+                    borderColor={formData.networkType === 'vpc' ? '#0ea5e9' : 'gray.200'}
+                    bg={formData.networkType === 'vpc' ? '#f0f9ff' : 'white'}
+                    cursor="pointer"
+                    onClick={() => setFormData({ ...formData, networkType: 'vpc' })}
+                    transition="all 0.2s"
+                    _hover={{
+                      borderColor: '#38bdf8',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    }}
+                  >
+                    <VStack gap="12px" align="start">
+                      <HStack gap="12px">
+                        <Box
+                          p="12px"
+                          borderRadius="10px"
+                          bg={formData.networkType === 'vpc' ? 'brand.100' : 'gray.100'}
+                          color={formData.networkType === 'vpc' ? 'brand.600' : 'gray.600'}
+                        >
+                          <LuNetwork size={24} />
+                        </Box>
+                        <VStack gap="4px" align="start">
+                          <Text fontSize="18px" fontWeight="700" color="gray.900">
+                            VPC
+                          </Text>
+                          <Text fontSize="13px" color="gray.600">
+                            Virtual Private Cloud
+                          </Text>
+                        </VStack>
+                      </HStack>
+                      <Text fontSize="12px" color="gray.500">
+                        VPC в регионе {selectedLocation?.region} с гибкой настройкой
+                      </Text>
+                    </VStack>
+                  </Box>
+                </GridItem>
+              </Grid>
+
+              <Box 
+                p="16px" 
+                borderRadius="12px" 
+                border="2px solid" 
+                borderColor={formData.publicIp ? "brand.200" : "gray.200"}
+                bg={formData.publicIp ? "brand.50" : "white"}
+                cursor="pointer"
+                onClick={() => setFormData({ ...formData, publicIp: !formData.publicIp })}
+                transition="all 0.2s"
+              >
+                <HStack justify="space-between">
+                  <VStack gap="4px" align="start">
+                    <Text fontSize="14px" fontWeight="600" color="gray.900">
+                      Публичный IP адрес
+                    </Text>
+                    <Text fontSize="13px" color="gray.600">
+                      Назначить публичный IP для доступа из интернета
+                    </Text>
+                  </VStack>
+                  <Box
+                    w="24px"
+                    h="24px"
+                    borderRadius="6px"
+                    border="2px solid"
+                    borderColor={formData.publicIp ? "brand.500" : "gray.300"}
+                    bg={formData.publicIp ? "brand.500" : "white"}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    {formData.publicIp && <LuCheck size={16} color="white" />}
+                  </Box>
+                </HStack>
+              </Box>
             </VStack>
           )}
 
@@ -580,7 +646,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Network:</Text>
                     <Text fontSize="14px" fontWeight="600">
-                      Isolated + VPC {formData.publicIp ? '+ Public IP' : ''}
+                      {formData.networkType === 'isolated' ? 'Isolated' : 'VPC'} {formData.publicIp ? '+ Public IP' : ''}
                     </Text>
                   </HStack>
                   {selectedConfig && (
