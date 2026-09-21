@@ -28,7 +28,9 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, timeou
     url,
     method: options.method || 'GET',
     hasToken: !!API_TOKEN,
-    tokenPreview: API_TOKEN ? `${API_TOKEN.substring(0, 10)}...` : 'NO TOKEN'
+    tokenLength: API_TOKEN.length,
+    tokenPreview: API_TOKEN ? `${API_TOKEN.substring(0, 20)}...` : 'NO TOKEN',
+    authHeader: `Bearer ${API_TOKEN.substring(0, 20)}...`
   });
 
   try {
