@@ -16,18 +16,17 @@ const locations = [
 ];
 
 const images = [
-  { id: 'ubuntu-22', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
   { id: 'ubuntu-24', name: 'Ubuntu 24.04 LTS', icon: '🐧', os: 'Linux' },
-  { id: 'centos-9', name: 'CentOS 9', icon: '🎩', os: 'Linux' },
-  { id: 'debian-12', name: 'Debian 12', icon: '🌀', os: 'Linux' },
+  { id: 'ubuntu-22', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
+  { id: 'centos-9', name: 'CentOS-9', icon: '🎩', os: 'Linux' },
+  { id: 'debian-12', name: 'Debian-12', icon: '🌀', os: 'Linux' },
   { id: 'windows-2022', name: 'Windows Server 2022', icon: '🪟', os: 'Windows' },
 ];
 
 const instanceConfigs = [
-  { id: 'small', name: 'Small', cpu: 2, ram: 4, price: 22000 },
-  { id: 'medium', name: 'Medium', cpu: 4, ram: 8, price: 45000 },
-  { id: 'large', name: 'Large', cpu: 8, ram: 16, price: 89000 },
-  { id: 'xlarge', name: 'XLarge', cpu: 16, ram: 32, price: 156000 },
+  { id: 'start-1', name: 'Start-1', cpu: 1, ram: 1, price: 0 },
+  { id: 'plan-2', name: 'Plan-2', cpu: 2, ram: 4, price: 0 },
+  { id: '2c-8g', name: '2C 8G', cpu: 2, ram: 8, price: 0 },
 ];
 
 const volumeSizes = [50, 100, 200, 500, 1000];
@@ -76,6 +75,23 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const REGION_PRODUCTION = 'a127f724-c39c-45a0-a3bd-ceafa350e9b2';
   const PROJECT_DEFAULT = 'a21d2d63-e747-497d-8abd-bea57f57dd8a';
 
+  // Templates ID
+  const TEMPLATES: Record<string, string> = {
+    'ubuntu-24': 'a145bd0b-43d7-40f9-a0e3-423eff08e9f4',
+    'ubuntu-22': 'a14fb343-50df-4c98-9db8-51d223722c88',
+    'centos-7': 'a162551d-e581-4493-b7a0-881dcf133464',
+    'centos-9': 'a1664afb-a68a-4dfa-bdfd-2887c21f0b3d',
+    'debian-12': 'a16bf518-ae91-4eb6-9bf5-aef9f1fd2d6b',
+    'windows-2022': 'a1624bd7-bb1b-4770-9406-6748a4a9a51c',
+  };
+
+  // Plans ID
+  const PLANS: Record<string, string> = {
+    'start-1': 'a165cb8e-0cef-47a9-9c18-e1270d6b607b',
+    'plan-2': 'a1300a00-bac5-451f-be77-6b074b26a6a7',
+    '2c-8g': 'a21557d2-4c1c-4d72-9de1-3efc91f5e1c4',
+  };
+
   // Маппинг regions
   const getRegionId = (locationId: string): string => {
     const mapping: Record<string, string> = {
@@ -87,8 +103,17 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
 
   // Маппинг проектов
   const getProjectId = (projectSlug: string): string => {
-    // Пока используем только Default проект
     return PROJECT_DEFAULT;
+  };
+
+  // Маппинг templates
+  const getTemplateId = (imageId: string): string => {
+    return TEMPLATES[imageId] || TEMPLATES['ubuntu-22'];
+  };
+
+  // Маппинг plans
+  const getPlanId = (configId: string): string => {
+    return PLANS[configId] || PLANS['start-1'];
   };
 
   const handleCreate = async () => {
@@ -107,8 +132,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         cloud_provider: CLOUD_PROVIDER_NIMBO,
         region: getRegionId(formData.location),
         project: getProjectId(formData.project),
-        template: formData.image, // Нужно будет маппить на реальный template ID
-        service_offering: formData.instanceConfig, // Нужно будет маппить на реальный plan ID
+        template: getTemplateId(formData.image),
+        plan: getPlanId(formData.instanceConfig),
         disk_size: formData.volumeSize,
         public_ip: formData.publicIp,
       };
