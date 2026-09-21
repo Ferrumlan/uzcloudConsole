@@ -60,36 +60,48 @@ export const api = {
   // User Profile
   user: {
     get: async (): Promise<User> => {
-      return apiRequest<User>('/profile');
+      const response = await apiRequest<any>('/profile');
+      // API возвращает { status, data: { user, account } }
+      const userData = response.data?.user || response.data || response;
+      return {
+        id: userData.id,
+        email: userData.email,
+        first_name: userData.name?.split(' ')[0] || '',
+        last_name: userData.name?.split(' ').slice(1).join(' ') || '',
+      };
     },
   },
 
   // Projects
   projects: {
     list: async (): Promise<Project[]> => {
-      const response = await apiRequest<{ data: Project[] }>('/projects');
-      return response.data;
+      const response = await apiRequest<any>('/projects');
+      // API возвращает { status, data: { data: [...] } } или { status, data: [...] }
+      return response.data?.data || response.data || [];
     },
   },
 
   // Regions
   regions: {
     list: async () => {
-      return apiRequest<any[]>('/regions');
+      const response = await apiRequest<any>('/regions');
+      return response.data?.data || response.data || [];
     },
   },
 
   // Templates
   templates: {
     list: async () => {
-      return apiRequest<any[]>('/templates');
+      const response = await apiRequest<any>('/templates');
+      return response.data?.data || response.data || [];
     },
   },
 
   // Plans
   plans: {
     listVMPlans: async () => {
-      return apiRequest<any[]>('/plans/service/Virtual Machine');
+      const response = await apiRequest<any>('/plans/service/Virtual Machine');
+      return response.data?.data || response.data || [];
     },
   },
   
@@ -97,12 +109,13 @@ export const api = {
   virtualMachines: {
     list: async (projectSlug?: string): Promise<VirtualMachine[]> => {
       const params = projectSlug ? `?project_slug=${projectSlug}` : '';
-      const response = await apiRequest<{ data: VirtualMachine[] }>(`/virtual-machines${params}`);
-      return response.data;
+      const response = await apiRequest<any>(`/virtual-machines${params}`);
+      return response.data?.data || response.data || [];
     },
 
     get: async (slug: string): Promise<VirtualMachine> => {
-      return apiRequest<VirtualMachine>(`/virtual-machines/${slug}`);
+      const response = await apiRequest<any>(`/virtual-machines/${slug}`);
+      return response.data || response;
     },
 
     create: async (data: {
@@ -116,10 +129,11 @@ export const api = {
       network_id?: number;
       public_ip?: boolean;
     }): Promise<VirtualMachine> => {
-      return apiRequest<VirtualMachine>('/virtual-machines', {
+      const response = await apiRequest<any>('/virtual-machines', {
         method: 'POST',
         body: JSON.stringify(data),
       }, 30000); // 30 секунд для создания ВМ
+      return response.data || response;
     },
 
     start: async (slug: string): Promise<void> => {
@@ -138,12 +152,14 @@ export const api = {
   // Billing
   billing: {
     getBalance: async (): Promise<AccountBalance> => {
-      return apiRequest<AccountBalance>('/account/balance');
+      const response = await apiRequest<any>('/account/balance');
+      // API возвращает { status, data: { balance, currency } }
+      return response.data || response;
     },
 
     getInvoices: async (): Promise<Invoice[]> => {
-      const response = await apiRequest<{ data: Invoice[] }>('/invoices');
-      return response.data;
+      const response = await apiRequest<any>('/billing/invoices');
+      return response.data?.data || response.data || [];
     },
   },
 };
