@@ -1,23 +1,84 @@
 import React, { useState } from 'react';
+import { Box, VStack, Text, Spinner } from '@chakra-ui/react';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { Layout } from './components/Layout';
 import { VMCreateWizard } from './components/VMCreateWizard';
-import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { VMListPage } from './pages/VMListPage';
 import { VMDetailPage } from './pages/VMDetailPage';
 import { BillingPage } from './pages/BillingPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import type { VirtualMachine } from './api/types';
-import { LuContainer, LuDatabase, LuNetwork, LuHardDrive, LuCamera, LuSettings } from 'react-icons/lu';
+import { LuContainer, LuDatabase, LuNetwork, LuHardDrive, LuCamera, LuSettings, LuCircleAlert } from 'react-icons/lu';
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, currentPage, setCurrentPage } = useApp();
+  const { isAuthenticated, user, currentPage } = useApp();
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
   const [isCreateVMOpen, setIsCreateVMOpen] = useState(false);
 
+  // Экран загрузки
+  if (!user) {
+    return (
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        bg="#f8fafc"
+      >
+        <VStack gap="16px">
+          <Spinner size="xl" color="brand.500" borderWidth="3px" />
+          <Text fontSize="16px" color="gray.600" fontWeight="500">
+            Загрузка...
+          </Text>
+        </VStack>
+      </Box>
+    );
+  }
+
+  // Экран ошибки (если токен невалидный)
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <Box
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        bg="#f8fafc"
+        p="24px"
+      >
+        <Box
+          bg="white"
+          borderRadius="24px"
+          p="48px"
+          maxW="500px"
+          boxShadow="0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+        >
+          <VStack gap="24px" align="center">
+            <Box
+              w="72px"
+              h="72px"
+              borderRadius="20px"
+              bg="#fef2f2"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              color="#ef4444"
+            >
+              <LuCircleAlert size={40} />
+            </Box>
+            <VStack gap="12px">
+              <Text fontSize="24px" fontWeight="700" color="gray.900">
+                Ошибка авторизации
+              </Text>
+              <Text fontSize="16px" color="gray.600" textAlign="center">
+                Не удалось подключиться к API. Проверьте токен авторизации в файле .env
+              </Text>
+            </VStack>
+          </VStack>
+        </Box>
+      </Box>
+    );
   }
 
   const renderPage = () => {

@@ -5,7 +5,7 @@ import { ModernButton } from './ModernButton';
 import { 
   LuLayoutDashboard, LuServer, LuNetwork, LuHardDrive, LuCamera, 
   LuCreditCard, LuContainer, LuDatabase, LuSettings, LuLogOut, 
-  LuGlobe, LuCloud, LuChevronRight
+  LuGlobe, LuCloud
 } from 'react-icons/lu';
 
 type Page = 'dashboard' | 'vms' | 'networking' | 'storage' | 'snapshots' | 'billing' | 'kubernetes' | 'objectStorage' | 'settings';
@@ -23,7 +23,7 @@ const navItems: Array<{ id: Page; icon: any; label: string; badge?: string }> = 
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout, language, setLanguage, projects, selectedProject, setSelectedProject, currentPage, setCurrentPage } = useApp();
+  const { user, logout, language, setLanguage, currentPage, setCurrentPage } = useApp();
 
   return (
     <Flex minH="100vh" bg="#f8fafc">
@@ -64,39 +64,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </Text>
             </VStack>
           </HStack>
-        </Box>
-
-        {/* Project Selector */}
-        <Box p="16px" borderBottom="1px solid" borderBottomColor="gray.100">
-          <Text fontSize="12px" fontWeight="600" color="gray.500" mb="12px" textTransform="uppercase" letterSpacing="0.05em">
-            Проект
-          </Text>
-          <VStack gap="4px" align="stretch">
-            {projects.map((project) => (
-              <Box
-                key={project.slug}
-                p="10px 12px"
-                borderRadius="10px"
-                bg={selectedProject === project.slug ? 'brand.50' : 'transparent'}
-                color={selectedProject === project.slug ? 'brand.700' : 'gray.700'}
-                cursor="pointer"
-                onClick={() => setSelectedProject(project.slug)}
-                _hover={{ bg: selectedProject === project.slug ? 'brand.100' : 'gray.50' }}
-                transition="all 0.2s"
-              >
-                <HStack justify="space-between">
-                  <Text fontSize="14px" fontWeight={selectedProject === project.slug ? '600' : '500'}>
-                    {project.name}
-                  </Text>
-                  {project.is_default && (
-                    <Badge size="sm" colorPalette="gray" variant="subtle" borderRadius="6px">
-                      default
-                    </Badge>
-                  )}
-                </HStack>
-              </Box>
-            ))}
-          </VStack>
         </Box>
 
         {/* Navigation */}
@@ -174,10 +141,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <HStack justify="space-between">
               <VStack gap="0" align="start">
                 <Text fontSize="14px" fontWeight="600">
-                  {user?.email || 'admin@uzcloud.uz'}
+                  {user?.email || 'Загрузка...'}
                 </Text>
                 <Text fontSize="12px" color="gray.500">
-                  {projects.find(p => p.slug === selectedProject)?.name || 'Production'}
+                  Production
                 </Text>
               </VStack>
               <ModernButton variant="ghost" size="sm" onClick={logout}>
@@ -204,7 +171,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <HStack justify="space-between">
             <HStack gap="8px">
               <Text fontSize="14px" color="gray.500" fontWeight="500">
-                {projects.find(p => p.slug === selectedProject)?.name || 'Production'}
+                Production
               </Text>
               <Text fontSize="14px" color="gray.300">/</Text>
               <Text fontSize="14px" fontWeight="600" color="gray.900">

@@ -7,19 +7,17 @@ import type { AccountBalance, Invoice } from '../api/types';
 import { LuWallet, LuTrendingUp, LuFileText } from 'react-icons/lu';
 
 export const BillingPage: React.FC = () => {
-  const { token } = useApp();
   const [balance, setBalance] = useState<AccountBalance | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      if (!token) return;
       setLoading(true);
       try {
         const [balanceData, invoicesData] = await Promise.all([
-          api.billing.getBalance(token),
-          api.billing.getInvoices(token),
+          api.billing.getBalance(),
+          api.billing.getInvoices(),
         ]);
         setBalance(balanceData);
         setInvoices(invoicesData);
@@ -30,7 +28,7 @@ export const BillingPage: React.FC = () => {
       }
     };
     loadData();
-  }, [token]);
+  }, []);
 
   const formatCurrency = (amount: number, currency: string = 'UZS') => {
     return new Intl.NumberFormat('uz-UZ').format(amount) + (currency === 'UZS' ? ' сўм' : ` ${currency}`);

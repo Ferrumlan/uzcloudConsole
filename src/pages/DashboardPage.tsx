@@ -7,7 +7,6 @@ import type { VirtualMachine, AccountBalance, Invoice } from '../api/types';
 import { LuServer, LuPlay, LuSquare, LuWallet, LuActivity } from 'react-icons/lu';
 
 export const DashboardPage: React.FC = () => {
-  const { token, selectedProject } = useApp();
   const [vms, setVms] = useState<VirtualMachine[]>([]);
   const [balance, setBalance] = useState<AccountBalance | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -15,13 +14,12 @@ export const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!token) return;
       setLoading(true);
       try {
         const [vmsData, balanceData, invoicesData] = await Promise.all([
-          api.virtualMachines.list(token, selectedProject),
-          api.billing.getBalance(token),
-          api.billing.getInvoices(token),
+          api.virtualMachines.list(),
+          api.billing.getBalance(),
+          api.billing.getInvoices(),
         ]);
         setVms(vmsData);
         setBalance(balanceData);
@@ -33,7 +31,7 @@ export const DashboardPage: React.FC = () => {
       }
     };
     loadData();
-  }, [token, selectedProject]);
+  }, []);
 
   const formatCurrency = (amount: number, currency: string = 'UZS') => {
     return new Intl.NumberFormat('uz-UZ').format(amount) + (currency === 'UZS' ? ' сўм' : ` ${currency}`);
