@@ -121,18 +121,21 @@ export const api = {
     create: async (data: {
       name: string;
       hostname?: string;
-      project_id?: number;
-      service_offering_id: number;
-      template_id: number;
-      zone_id: number;
+      cloud_provider: string;
+      region: string;
+      project: string;
+      template?: string;
+      service_offering?: string;
+      plan_id?: string;
       disk_size?: number;
-      network_id?: number;
+      network_type?: string;
       public_ip?: boolean;
+      [key: string]: any;
     }): Promise<VirtualMachine> => {
       const response = await apiRequest<any>('/virtual-machines', {
         method: 'POST',
         body: JSON.stringify(data),
-      }, 30000); // 30 секунд для создания ВМ
+      }, 60000); // 60 секунд для создания ВМ
       return response.data || response;
     },
 

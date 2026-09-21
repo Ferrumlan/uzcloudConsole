@@ -70,35 +70,25 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  // Маппинг mock данных в реальные ID для API
-  // В реальном приложении эти ID должны приходить из API
-  const getServiceOfferingId = (configId: string): number => {
-    const mapping: Record<string, number> = {
-      'small': 1,
-      'medium': 2,
-      'large': 3,
-      'xlarge': 4,
+  // Реальные ID из API (получены через curl)
+  const CLOUD_PROVIDER_NIMBO = 'a127f722-d4bd-4715-a627-b549ea112fdf';
+  const REGION_STAGING = 'a2155064-1f9f-4369-8932-951aaa3ea724';
+  const REGION_PRODUCTION = 'a127f724-c39c-45a0-a3bd-ceafa350e9b2';
+  const PROJECT_DEFAULT = 'a21d2d63-e747-497d-8abd-bea57f57dd8a';
+
+  // Маппинг regions
+  const getRegionId = (locationId: string): string => {
+    const mapping: Record<string, string> = {
+      'production': REGION_PRODUCTION,
+      'staging': REGION_STAGING,
     };
-    return mapping[configId] || 1;
+    return mapping[locationId] || REGION_STAGING;
   };
 
-  const getTemplateId = (imageId: string): number => {
-    const mapping: Record<string, number> = {
-      'ubuntu-22': 1,
-      'ubuntu-24': 2,
-      'centos-9': 3,
-      'debian-12': 4,
-      'windows-2022': 5,
-    };
-    return mapping[imageId] || 1;
-  };
-
-  const getZoneId = (locationId: string): number => {
-    const mapping: Record<string, number> = {
-      'production': 1,
-      'staging': 2,
-    };
-    return mapping[locationId] || 1;
+  // Маппинг проектов
+  const getProjectId = (projectSlug: string): string => {
+    // Пока используем только Default проект
+    return PROJECT_DEFAULT;
   };
 
   const handleCreate = async () => {
@@ -114,9 +104,11 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       const vmData = {
         name: formData.name,
         hostname: formData.name.toLowerCase().replace(/\s+/g, '-'),
-        service_offering_id: getServiceOfferingId(formData.instanceConfig),
-        template_id: getTemplateId(formData.image),
-        zone_id: getZoneId(formData.location),
+        cloud_provider: CLOUD_PROVIDER_NIMBO,
+        region: getRegionId(formData.location),
+        project: getProjectId(formData.project),
+        template: formData.image, // Нужно будет маппить на реальный template ID
+        service_offering: formData.instanceConfig, // Нужно будет маппить на реальный plan ID
         disk_size: formData.volumeSize,
         public_ip: formData.publicIp,
       };
