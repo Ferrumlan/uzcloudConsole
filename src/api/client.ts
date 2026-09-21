@@ -55,10 +55,10 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, timeou
 }
 
 export const api = {
-  // User
+  // User Profile
   user: {
     get: async (): Promise<User> => {
-      return apiRequest<User>('/user');
+      return apiRequest<User>('/profile');
     },
   },
 
@@ -70,6 +70,27 @@ export const api = {
     },
   },
 
+  // Regions
+  regions: {
+    list: async () => {
+      return apiRequest<any[]>('/regions');
+    },
+  },
+
+  // Templates
+  templates: {
+    list: async () => {
+      return apiRequest<any[]>('/templates');
+    },
+  },
+
+  // Plans
+  plans: {
+    listVMPlans: async () => {
+      return apiRequest<any[]>('/plans/service/Virtual Machine');
+    },
+  },
+  
   // Virtual Machines
   virtualMachines: {
     list: async (projectSlug?: string): Promise<VirtualMachine[]> => {
