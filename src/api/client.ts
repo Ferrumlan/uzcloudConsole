@@ -6,18 +6,35 @@ const API_BASE_URL = import.meta.env.DEV
   : (import.meta.env.VITE_API_BASE_URL || 'https://uzcloud.stackpoc.in/backend/api');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
+console.log('API Configuration:', {
+  baseURL: API_BASE_URL,
+  tokenExists: !!API_TOKEN,
+  tokenLength: API_TOKEN.length,
+  isDev: import.meta.env.DEV
+});
+
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}, timeoutMs: number = 10000): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+  const url = `${API_BASE_URL}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_TOKEN}`,
+    ...options.headers,
+  };
+
+  console.log('API Request:', {
+    url,
+    method: options.method || 'GET',
+    hasToken: !!API_TOKEN,
+    tokenPreview: API_TOKEN ? `${API_TOKEN.substring(0, 10)}...` : 'NO TOKEN'
+  });
+
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_TOKEN}`,
-        ...options.headers,
-      },
+      headers,
       signal: controller.signal,
     });
 

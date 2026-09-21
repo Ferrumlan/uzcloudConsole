@@ -11,6 +11,13 @@ import { PlaceholderPage } from './pages/PlaceholderPage';
 import type { VirtualMachine } from './api/types';
 import { LuContainer, LuDatabase, LuNetwork, LuHardDrive, LuCamera, LuSettings, LuCircleAlert } from 'react-icons/lu';
 
+// Проверка переменных окружения
+console.log('Environment check:', {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  VITE_API_TOKEN: import.meta.env.VITE_API_TOKEN ? 'SET' : 'NOT SET',
+  VITE_USE_MOCK: import.meta.env.VITE_USE_MOCK,
+});
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, user, currentPage } = useApp();
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
