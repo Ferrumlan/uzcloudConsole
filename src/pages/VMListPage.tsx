@@ -13,16 +13,14 @@ interface VMListPageProps {
 }
 
 export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }) => {
-  const { token, selectedProject } = useApp();
   const [vms, setVms] = useState<VirtualMachine[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadVMs = async () => {
-    if (!token) return;
     setLoading(true);
     try {
-      const data = await api.virtualMachines.list(token, selectedProject);
+      const data = await api.virtualMachines.list();
       setVms(data);
     } catch (err) {
       console.error('Failed to load VMs:', err);
@@ -33,15 +31,14 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
 
   useEffect(() => {
     loadVMs();
-  }, [token, selectedProject]);
+  }, []);
 
   const handleVMAction = async (action: string, slug: string) => {
-    if (!token) return;
     try {
       switch (action) {
-        case 'start': await api.virtualMachines.start(token, slug); break;
-        case 'stop': await api.virtualMachines.stop(token, slug); break;
-        case 'reboot': await api.virtualMachines.reboot(token, slug); break;
+        case 'start': await api.virtualMachines.start(slug); break;
+        case 'stop': await api.virtualMachines.stop(slug); break;
+        case 'reboot': await api.virtualMachines.reboot(slug); break;
       }
       await loadVMs();
     } catch (err) {
