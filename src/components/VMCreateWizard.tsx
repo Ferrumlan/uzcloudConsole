@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator } from '@chakra-ui/react';
 import { ModernButton } from './ModernButton';
 import { useApp } from '../contexts/AppContext';
+import { api } from '../api/client';
 import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
@@ -67,22 +68,88 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleCreate = () => {
-    console.log('Creating VM:', formData);
-    onClose();
-    setCurrentStep(1);
-    setFormData({
-      location: 'production',
-      project: 'default',
-      newProjectName: '',
-      image: '',
-      instanceConfig: '',
-      volumeSize: 100,
-      networkType: 'isolated',
-      publicIp: false,
-      name: '',
-    });
-    setIsCreatingProject(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  // Маппинг mock данных в реальные ID для API
+  // В реальном приложении эти ID должны приходить из API
+  const getServiceOfferingId = (configId: string): number => {
+    const mapping: Record<string, number> = {
+      'small': 1,
+      'medium': 2,
+      'large': 3,
+      'xlarge': 4,
+    };
+    return mapping[configId] || 1;
+  };
+
+  const getTemplateId = (imageId: string): number => {
+    const mapping: Record<string, number> = {
+      'ubuntu-22': 1,
+      'ubuntu-24': 2,
+      'centos-9': 3,
+      'debian-12': 4,
+      'windows-2022': 5,
+    };
+    return mapping[imageId] || 1;
+  };
+
+  const getZoneId = (locationId: string): number => {
+    const mapping: Record<string, number> = {
+      'production': 1,
+      'staging': 2,
+    };
+    return mapping[locationId] || 1;
+  };
+
+  const handleCreate = async () => {
+    if (!formData.name || !formData.image || !formData.instanceConfig) {
+      setCreateError('Заполните все обязательные поля');
+      return;
+    }
+
+    setIsCreating(true);
+    setCreateError(null);
+
+    try {
+      const vmData = {
+        name: formData.name,
+        hostname: formData.name.toLowerCase().replace(/\s+/g, '-'),
+        service_offering_id: getServiceOfferingId(formData.instanceConfig),
+        template_id: getTemplateId(formData.image),
+        zone_id: getZoneId(formData.location),
+        disk_size: formData.volumeSize,
+        public_ip: formData.publicIp,
+      };
+
+      console.log('Creating VM with data:', vmData);
+      
+      await api.virtualMachines.create(vmData);
+      
+      // Успешное создание
+      onClose();
+      setCurrentStep(1);
+      setFormData({
+        location: 'production',
+        project: 'default',
+        newProjectName: '',
+        image: '',
+        instanceConfig: '',
+        volumeSize: 100,
+        networkType: 'isolated',
+        publicIp: false,
+        name: '',
+      });
+      setIsCreatingProject(false);
+      
+      // TODO: Обновить список ВМ на странице
+      window.location.reload(); // Временно перезагружаем страницу
+    } catch (error) {
+      console.error('Failed to create VM:', error);
+      setCreateError(error instanceof Error ? error.message : 'Ошибка создания ВМ');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const selectedLocation = locations.find(l => l.id === formData.location);
@@ -668,23 +735,42 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
 
         {/* Footer */}
         <Box p="24px" borderTop="1px solid" borderTopColor="gray.100">
-          <HStack justify="space-between">
-            <ModernButton variant="outline" size="md" onClick={handleBack} disabled={currentStep === 1}>
-              <LuChevronLeft size={18} />
-              Назад
-            </ModernButton>
-            {currentStep < 7 ? (
-              <ModernButton variant="gradient" size="md" onClick={handleNext}>
-                Далее
-                <LuChevronRight size={18} />
-              </ModernButton>
-            ) : (
-              <ModernButton variant="success" size="md" onClick={handleCreate}>
-                <LuCheck size={18} />
-                Создать ВМ
-              </ModernButton>
+          <VStack gap="12px" align="stretch">
+            {createError && (
+              <Box p="12px" borderRadius="8px" bg="red.50" border="1px solid" borderColor="red.200">
+                <Text fontSize="13px" color="red.700" fontWeight="500">
+                  {createError}
+                </Text>
+              </Box>
             )}
-          </HStack>
+            <HStack justify="space-between">
+              <ModernButton 
+                variant="outline" 
+                size="md" 
+                onClick={handleBack} 
+                disabled={currentStep === 1 || isCreating}
+              >
+                <LuChevronLeft size={18} />
+                Назад
+              </ModernButton>
+              {currentStep < 7 ? (
+                <ModernButton variant="gradient" size="md" onClick={handleNext}>
+                  Далее
+                  <LuChevronRight size={18} />
+                </ModernButton>
+              ) : (
+                <ModernButton 
+                  variant="success" 
+                  size="md" 
+                  onClick={handleCreate}
+                  loading={isCreating}
+                >
+                  <LuCheck size={18} />
+                  {isCreating ? 'Создание...' : 'Создать ВМ'}
+                </ModernButton>
+              )}
+            </HStack>
+          </VStack>
         </Box>
       </Box>
     </Box>

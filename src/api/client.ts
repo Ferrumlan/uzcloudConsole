@@ -6,9 +6,9 @@ const API_BASE_URL = import.meta.env.DEV
   : (import.meta.env.VITE_API_BASE_URL || 'https://uzcloud.stackpoc.in/backend/api');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}, timeoutMs: number = 10000): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -63,6 +63,23 @@ export const api = {
 
     get: async (slug: string): Promise<VirtualMachine> => {
       return apiRequest<VirtualMachine>(`/virtual-machines/${slug}`);
+    },
+
+    create: async (data: {
+      name: string;
+      hostname?: string;
+      project_id?: number;
+      service_offering_id: number;
+      template_id: number;
+      zone_id: number;
+      disk_size?: number;
+      network_id?: number;
+      public_ip?: boolean;
+    }): Promise<VirtualMachine> => {
+      return apiRequest<VirtualMachine>('/virtual-machines', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }, 30000); // 30 секунд для создания ВМ
     },
 
     start: async (slug: string): Promise<void> => {
