@@ -7,6 +7,9 @@ const API_BASE_URL = import.meta.env.DEV
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 секунд timeout
+
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
@@ -15,7 +18,10 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         'Authorization': `Bearer ${API_TOKEN}`,
         ...options.headers,
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -25,6 +31,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
     return response.json();
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error('API Request failed:', error);
     throw error;
   }
