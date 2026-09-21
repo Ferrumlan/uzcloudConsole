@@ -47,6 +47,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     name: '',
   });
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -67,9 +69,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
-
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
 
   // Маппинг mock данных в реальные ID для API
   // В реальном приложении эти ID должны приходить из API
