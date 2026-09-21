@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator } from '@chakra-ui/react';
 import { ModernButton } from './ModernButton';
-import { LuServer, LuCpu, LuMemoryStick, LuHardDrive, LuCheck, LuChevronRight, LuChevronLeft } from 'react-icons/lu';
+import { useApp } from '../contexts/AppContext';
+import { LuServer, LuCpu, LuMemoryStick, LuHardDrive, LuCheck, LuChevronRight, LuChevronLeft, LuFolder } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
   isOpen: boolean;
@@ -24,12 +25,14 @@ const plans = [
 ];
 
 export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose }) => {
+  const { projects } = useApp();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
     hostname: '',
     template: '',
     plan: '',
+    project: projects.find(p => p.is_default)?.slug || projects[0]?.slug || 'production',
   });
 
   if (!isOpen) return null;
@@ -46,7 +49,13 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     console.log('Creating VM:', formData);
     onClose();
     setCurrentStep(1);
-    setFormData({ name: '', hostname: '', template: '', plan: '' });
+    setFormData({ 
+      name: '', 
+      hostname: '', 
+      template: '', 
+      plan: '',
+      project: projects.find(p => p.is_default)?.slug || projects[0]?.slug || 'production',
+    });
   };
 
   const selectedTemplate = templates.find(t => t.id === formData.template);
@@ -114,6 +123,54 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         <Box p="24px" overflowY="auto" flex={1}>
           {currentStep === 1 && (
             <VStack gap="24px" align="stretch">
+              <VStack gap="8px" align="stretch">
+                <Text fontSize="14px" fontWeight="600" color="gray.700">
+                  Проект
+                </Text>
+                <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="12px">
+                  {projects.map((project) => (
+                    <GridItem key={project.slug}>
+                      <Box
+                        p="16px"
+                        borderRadius="12px"
+                        borderWidth="2px"
+                        borderColor={formData.project === project.slug ? '#0ea5e9' : 'gray.200'}
+                        bg={formData.project === project.slug ? '#f0f9ff' : 'white'}
+                        cursor="pointer"
+                        onClick={() => setFormData({ ...formData, project: project.slug })}
+                        transition="all 0.2s"
+                        _hover={{
+                          borderColor: '#38bdf8',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        }}
+                      >
+                        <HStack gap="12px">
+                          <Box
+                            p="8px"
+                            borderRadius="8px"
+                            bg={formData.project === project.slug ? 'brand.100' : 'gray.100'}
+                            color={formData.project === project.slug ? 'brand.600' : 'gray.600'}
+                          >
+                            <LuFolder size={20} />
+                          </Box>
+                          <VStack gap="2px" align="start" flex={1}>
+                            <Text fontSize="14px" fontWeight="600" color="gray.900">
+                              {project.name}
+                            </Text>
+                            {project.is_default && (
+                              <Text fontSize="11px" color="gray.500">
+                                По умолчанию
+                              </Text>
+                            )}
+                          </VStack>
+                        </HStack>
+                      </Box>
+                    </GridItem>
+                  ))}
+                </Grid>
+              </VStack>
+
               <VStack gap="8px" align="stretch">
                 <Text fontSize="14px" fontWeight="600" color="gray.700">
                   Имя виртуальной машины
@@ -269,6 +326,13 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
               </Text>
               <Box p="24px" borderRadius="12px" bg="gray.50" border="2px solid" borderColor="gray.200">
                 <VStack gap="16px" align="stretch">
+                  <HStack justify="space-between">
+                    <Text fontSize="14px" color="gray.600">Проект:</Text>
+                    <Text fontSize="14px" fontWeight="600" color="gray.900">
+                      {projects.find(p => p.slug === formData.project)?.name || '—'}
+                    </Text>
+                  </HStack>
+                  <Separator borderColor="gray.200" />
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Имя:</Text>
                     <Text fontSize="14px" fontWeight="600" color="gray.900">

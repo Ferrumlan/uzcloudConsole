@@ -1,23 +1,33 @@
 import type { VirtualMachine, Project, Invoice, AccountBalance, User } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://uzcloud.stackpoc.in/backend/api';
+// В dev режиме используем прокси, в production - прямой URL
+const API_BASE_URL = import.meta.env.DEV 
+  ? '/api' 
+  : (import.meta.env.VITE_API_BASE_URL || 'https://uzcloud.stackpoc.in/backend/api');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_TOKEN}`,
-      ...options.headers,
-    },
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_TOKEN}`,
+        ...options.headers,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API Error ${response.status}:`, errorText);
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('API Request failed:', error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export const api = {

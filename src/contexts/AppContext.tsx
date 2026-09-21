@@ -32,9 +32,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUser(userData);
         setIsAuthenticated(true);
         
-        // Загружаем проекты (только production)
-        const projectsData = await api.projects.list();
-        setProjects(projectsData);
+        // Загружаем проекты для выбора при создании ВМ
+        try {
+          const projectsData = await api.projects.list();
+          setProjects(projectsData);
+        } catch (err) {
+          console.warn('Failed to load projects, using default:', err);
+          // Если не удалось загрузить проекты, используем production по умолчанию
+          setProjects([{ id: 1, name: 'Production', slug: 'production', is_default: true }]);
+        }
       } catch (err) {
         console.error('Failed to initialize app:', err);
         // Если токен невалидный, показываем ошибку
