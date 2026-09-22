@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import type { User, Project } from '../api/types';
 import { api } from '../api/client';
 
-type Page = 'dashboard' | 'vms' | 'networking' | 'storage' | 'snapshots' | 'billing' | 'kubernetes' | 'objectStorage' | 'settings';
+type Page = 'dashboard' | 'vms' | 'billing';
 
 interface AppContextType {
   isAuthenticated: boolean;
