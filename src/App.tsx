@@ -118,11 +118,30 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <Layout>{renderPage()}</Layout>
-      <VMCreateWizard
-        isOpen={isCreateVMOpen}
-        onClose={() => setIsCreateVMOpen(false)}
-      />
+      {loadError === 'DEMO_MODE' && (
+        <Box
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          bg="orange.500"
+          color="white"
+          p="8px"
+          textAlign="center"
+          fontSize="14px"
+          fontWeight="600"
+          zIndex={9999}
+        >
+          ⚠️ Демо-режим (API недоступен) — Разверните на VPS для реальных данных
+        </Box>
+      )}
+      <Box pt={loadError === 'DEMO_MODE' ? '40px' : '0'}>
+        <Layout>{renderPage()}</Layout>
+        <VMCreateWizard
+          isOpen={isCreateVMOpen}
+          onClose={() => setIsCreateVMOpen(false)}
+        />
+      </Box>
     </>
   );
 };

@@ -23,8 +23,55 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
       const data = await api.virtualMachines.list();
       setVms(data);
     } catch (err) {
-      console.error('Failed to load VMs:', err);
-      setVms([]);
+      console.error('Failed to load VMs, using demo data:', err);
+      // Демо данные для preview
+      setVms([
+        {
+          id: 1,
+          slug: 'web-server-01',
+          name: 'Web Server 01',
+          hostname: 'web-01.uzcloud.uz',
+          status: 'running',
+          cpu: 4,
+          ram: 8,
+          disk: 100,
+          ip_address: '10.0.1.15',
+          zone: 'Tashkent-1',
+          template: 'Ubuntu 22.04 LTS',
+          project_slug: 'default',
+          created_at: '2026-01-15T10:30:00Z',
+        },
+        {
+          id: 2,
+          slug: 'api-server-01',
+          name: 'API Server 01',
+          hostname: 'api-01.uzcloud.uz',
+          status: 'running',
+          cpu: 8,
+          ram: 16,
+          disk: 200,
+          ip_address: '10.0.1.22',
+          zone: 'Tashkent-1',
+          template: 'Ubuntu 22.04 LTS',
+          project_slug: 'default',
+          created_at: '2026-02-20T14:20:00Z',
+        },
+        {
+          id: 3,
+          slug: 'db-server-01',
+          name: 'Database Server',
+          hostname: 'db-01.uzcloud.uz',
+          status: 'stopped',
+          cpu: 16,
+          ram: 32,
+          disk: 500,
+          ip_address: '10.0.1.30',
+          zone: 'Tashkent-1',
+          template: 'CentOS 9',
+          project_slug: 'default',
+          created_at: '2026-03-10T08:15:00Z',
+        },
+      ]);
     } finally {
       setLoading(false);
     }
