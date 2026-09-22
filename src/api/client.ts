@@ -9,7 +9,6 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 console.log('API Configuration:', {
   baseURL: API_BASE_URL,
   tokenExists: !!API_TOKEN,
-  tokenLength: API_TOKEN.length,
   isDev: import.meta.env.DEV
 });
 
