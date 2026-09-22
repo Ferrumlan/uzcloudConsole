@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, VStack, Text, Spinner } from '@chakra-ui/react';
-import { AppProvider, useApp } from './contexts/AppContext';
+import { useApp } from './contexts/AppContext';
 import { Layout } from './components/Layout';
 import { VMCreateWizard } from './components/VMCreateWizard';
 import { DashboardPage } from './pages/DashboardPage';
@@ -128,9 +128,5 @@ const AppContent: React.FC = () => {
 };
 
 export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
+  return <AppContent />;
 }
