@@ -23,14 +23,8 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
       const data = await api.virtualMachines.list();
       setVms(data);
     } catch (err) {
-      console.error('Failed to load VMs, using mock data:', err);
-      // Fallback на mock данные
-      setVms([
-        { id: 1, slug: 'web-01', name: 'Web Server 01', hostname: 'web-01.local', status: 'running', cpu: 4, ram: 8, disk: 100, ip_address: '10.0.1.15', zone: 'Tashkent-1', template: 'Ubuntu 22.04', project_slug: 'production', created_at: '2024-01-15T10:30:00Z' },
-        { id: 2, slug: 'api-01', name: 'API Server 01', hostname: 'api-01.local', status: 'running', cpu: 8, ram: 16, disk: 200, ip_address: '10.0.1.22', zone: 'Tashkent-1', template: 'Ubuntu 22.04', project_slug: 'production', created_at: '2024-02-20T14:20:00Z' },
-        { id: 3, slug: 'db-01', name: 'Database Server', hostname: 'db-01.local', status: 'stopped', cpu: 16, ram: 32, disk: 500, ip_address: '10.0.1.30', zone: 'Tashkent-1', template: 'CentOS 9', project_slug: 'production', created_at: '2024-03-10T08:15:00Z' },
-        { id: 4, slug: 'staging-web', name: 'Staging Web', hostname: 'staging-web.local', status: 'stopped', cpu: 2, ram: 4, disk: 50, ip_address: '10.0.2.10', zone: 'Tashkent-1', template: 'Ubuntu 22.04', project_slug: 'staging', created_at: '2024-04-05T16:45:00Z' },
-      ]);
+      console.error('Failed to load VMs:', err);
+      setVms([]);
     } finally {
       setLoading(false);
     }

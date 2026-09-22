@@ -28,7 +28,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Автоматическая загрузка данных при старте
     const initApp = async () => {
       try {
-        // Пытаемся загрузить данные пользователя
+        // Загружаем данные пользователя
         const userData = await api.user.get();
         setUser(userData);
         setIsAuthenticated(true);
@@ -38,21 +38,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const projectsData = await api.projects.list();
           setProjects(projectsData);
         } catch (err) {
-          console.warn('Failed to load projects, using default:', err);
-          // Если не удалось загрузить проекты, используем production по умолчанию
-          setProjects([{ id: 1, name: 'Production', slug: 'production', is_default: true }]);
+          console.warn('Failed to load projects:', err);
+          setProjects([]);
         }
       } catch (err) {
-        console.error('Failed to initialize app, using mock data:', err);
-        // Fallback на mock данные если API недоступен
-        setUser({
-          id: 1,
-          email: 'demo@uzcloud.uz',
-          first_name: 'Demo',
-          last_name: 'User',
-        });
-        setIsAuthenticated(true);
-        setProjects([{ id: 1, name: 'Production', slug: 'production', is_default: true }]);
+        console.error('Failed to initialize app:', err);
+        // Если API недоступен, показываем экран ошибки
+        setIsAuthenticated(false);
+        setUser(null);
+        setProjects([]);
       }
     };
 
