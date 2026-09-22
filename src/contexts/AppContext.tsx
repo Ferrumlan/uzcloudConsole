@@ -10,6 +10,8 @@ interface AppContextType {
   projects: Project[];
   currentPage: Page;
   language: 'ru' | 'uz' | 'en';
+  isLoading: boolean;
+  loadError: string | null;
   setCurrentPage: (page: Page) => void;
   setLanguage: (lang: 'ru' | 'uz' | 'en') => void;
   logout: () => void;
@@ -23,10 +25,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [language, setLanguage] = useState<'ru' | 'uz' | 'en'>('ru');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     // Автоматическая загрузка данных при старте
     const initApp = async () => {
+      setIsLoading(true);
       try {
         // Загружаем данные пользователя
         const userData = await api.user.get();
@@ -41,12 +46,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           console.warn('Failed to load projects:', err);
           setProjects([]);
         }
+        setLoadError(null);
       } catch (err) {
         console.error('Failed to initialize app:', err);
         // Если API недоступен, показываем экран ошибки
         setIsAuthenticated(false);
         setUser(null);
         setProjects([]);
+        setLoadError(err instanceof Error ? err.message : 'Не удалось подключиться к API');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -67,6 +76,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         projects,
         currentPage,
         language,
+        isLoading,
+        loadError,
         setCurrentPage,
         setLanguage,
         logout,

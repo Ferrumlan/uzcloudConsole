@@ -18,12 +18,12 @@ console.log('Environment check:', {
 });
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, user, currentPage } = useApp();
+  const { isAuthenticated, user, currentPage, isLoading, loadError } = useApp();
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
   const [isCreateVMOpen, setIsCreateVMOpen] = useState(false);
 
   // Экран загрузки
-  if (!user) {
+  if (isLoading) {
     return (
       <Box
         minH="100vh"
@@ -42,8 +42,8 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Экран ошибки (если токен невалидный)
-  if (!isAuthenticated) {
+  // Экран ошибки (если токен невалидный или API недоступен)
+  if (!isAuthenticated || !user) {
     return (
       <Box
         minH="100vh"
@@ -80,6 +80,13 @@ const AppContent: React.FC = () => {
               <Text fontSize="16px" color="gray.600" textAlign="center">
                 Не удалось подключиться к API. Проверьте токен авторизации в файле .env
               </Text>
+              {loadError && (
+                <Box bg="#fef2f2" p="12px" borderRadius="8px" w="100%">
+                  <Text fontSize="14px" color="#dc2626" fontFamily="mono">
+                    {loadError}
+                  </Text>
+                </Box>
+              )}
             </VStack>
           </VStack>
         </Box>
