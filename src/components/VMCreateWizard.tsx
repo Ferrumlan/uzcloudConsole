@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator } from '@chakra-ui/react';
 import { ModernButton } from './ModernButton';
 import { useApp } from '../contexts/AppContext';
+import { api } from '../api/client';
 import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
@@ -15,18 +16,32 @@ const locations = [
 ];
 
 const images = [
-  { id: 'ubuntu-22', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
   { id: 'ubuntu-24', name: 'Ubuntu 24.04 LTS', icon: '🐧', os: 'Linux' },
-  { id: 'centos-9', name: 'CentOS 9', icon: '🎩', os: 'Linux' },
-  { id: 'debian-12', name: 'Debian 12', icon: '🌀', os: 'Linux' },
+  { id: 'ubuntu-22', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
+  { id: 'centos-7', name: 'CentOS-7', icon: '🎩', os: 'Linux' },
+  { id: 'centos-9', name: 'CentOS-9', icon: '🎩', os: 'Linux' },
+  { id: 'centos-stream-10', name: 'CentOS Stream 10', icon: '🎩', os: 'Linux' },
+  { id: 'debian-13', name: 'Debian 13', icon: '🌀', os: 'Linux' },
+  { id: 'debian-12', name: 'Debian-12', icon: '🌀', os: 'Linux' },
+  { id: 'debian-11', name: 'Debian 11', icon: '🌀', os: 'Linux' },
+  { id: 'rocky-9', name: 'Rocky Linux 9.7', icon: '🪨', os: 'Linux' },
+  { id: 'rocky-8', name: 'Rocky Linux 8', icon: '🪨', os: 'Linux' },
+  { id: 'alma-9', name: 'AlmaLinux-9', icon: '🦬', os: 'Linux' },
+  { id: 'alma-8', name: 'AlmaLinux-8', icon: '🦬', os: 'Linux' },
+  { id: 'suse-16', name: 'SUSE-16', icon: '🦎', os: 'Linux' },
+  { id: 'windows-2025', name: 'Windows Server 2025', icon: '🪟', os: 'Windows' },
   { id: 'windows-2022', name: 'Windows Server 2022', icon: '🪟', os: 'Windows' },
+  { id: 'windows-2019', name: 'Windows server 2019', icon: '🪟', os: 'Windows' },
+  { id: 'freebsd', name: 'FREEPBX', icon: '📞', os: 'Linux' },
+  { id: 'opnsense', name: 'OPNsense-26.1.6', icon: '🔥', os: 'Linux' },
+  { id: 'issabel4', name: 'ISSABEL4', icon: '📞', os: 'Linux' },
+  { id: 'pfsense', name: 'Pfsense.2.7', icon: '🔥', os: 'Linux' },
 ];
 
 const instanceConfigs = [
-  { id: 'small', name: 'Small', cpu: 2, ram: 4, price: 22000 },
-  { id: 'medium', name: 'Medium', cpu: 4, ram: 8, price: 45000 },
-  { id: 'large', name: 'Large', cpu: 8, ram: 16, price: 89000 },
-  { id: 'xlarge', name: 'XLarge', cpu: 16, ram: 32, price: 156000 },
+  { id: 'start-1', name: 'Start-1', cpu: 1, ram: 1, price: 0 },
+  { id: 'plan-2', name: 'Plan-2', cpu: 2, ram: 4, price: 0 },
+  { id: '2c-8g', name: '2C 8G', cpu: 2, ram: 8, price: 0 },
 ];
 
 const volumeSizes = [50, 100, 200, 500, 1000];
@@ -46,6 +61,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     name: '',
   });
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -67,22 +84,117 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleCreate = () => {
-    console.log('Creating VM:', formData);
-    onClose();
-    setCurrentStep(1);
-    setFormData({
-      location: 'production',
-      project: 'default',
-      newProjectName: '',
-      image: '',
-      instanceConfig: '',
-      volumeSize: 100,
-      networkType: 'isolated',
-      publicIp: false,
-      name: '',
-    });
-    setIsCreatingProject(false);
+  // Реальные ID из API (получены через curl)
+  const CLOUD_PROVIDER_NIMBO = 'a127f722-d4bd-4715-a627-b549ea112fdf';
+  const REGION_STAGING = 'a2155064-1f9f-4369-8932-951aaa3ea724';
+  const REGION_PRODUCTION = 'a127f724-c39c-45a0-a3bd-ceafa350e9b2';
+  const PROJECT_DEFAULT = 'a21d2d63-e747-497d-8abd-bea57f57dd8a';
+
+  // Templates ID (все из API)
+  const TEMPLATES: Record<string, string> = {
+    'ubuntu-24': 'a145bd0b-43d7-40f9-a0e3-423eff08e9f4',
+    'ubuntu-22': 'a14fb343-50df-4c98-9db8-51d223722c88',
+    'centos-7': 'a162551d-e581-4493-b7a0-881dcf133464',
+    'centos-9': 'a1664afb-a68a-4dfa-bdfd-2887c21f0b3d',
+    'centos-stream-10': 'a1663930-a5d5-48b4-b6ed-940d8e2f507a',
+    'debian-13': 'a155e997-40fb-4fe1-8e34-d489ab4ceaf5',
+    'debian-12': 'a16bf518-ae91-4eb6-9bf5-aef9f1fd2d6b',
+    'debian-11': 'a216f38f-59e9-4d2f-b4fd-0c8d8b322a86',
+    'rocky-9': 'a15415b5-30c5-4175-84a4-e001588becc0',
+    'rocky-8': 'a16be268-878c-4f45-883b-6355d4643a0e',
+    'alma-9': 'a16635ac-a223-4f19-8d57-f8348913ddf3',
+    'alma-8': 'a1663536-7e99-469b-b27e-9b493e7f0f50',
+    'suse-16': 'a149f526-9d31-4139-ac7c-eded0b2569fe',
+    'windows-2025': 'a1603364-b3a2-4961-86e4-1804fb019f3f',
+    'windows-2022': 'a1624bd7-bb1b-4770-9406-6748a4a9a51c',
+    'windows-2019': 'a1623e4d-5010-4d7a-877b-26f8cec58673',
+    'freebsd': 'a1880e27-0da5-4dfe-a852-ea465b5bcef5',
+    'opnsense': 'a1f13a77-f36f-4e04-8517-592ad6e28b6d',
+    'issabel4': 'a18815ff-813b-44dd-9eff-0b4b8f4d5fd0',
+    'pfsense': 'a198a36f-f9e2-4f19-b405-cf13ed0c22ec',
+  };
+
+  // Plans ID
+  const PLANS: Record<string, string> = {
+    'start-1': 'a165cb8e-0cef-47a9-9c18-e1270d6b607b',
+    'plan-2': 'a1300a00-bac5-451f-be77-6b074b26a6a7',
+    '2c-8g': 'a21557d2-4c1c-4d72-9de1-3efc91f5e1c4',
+  };
+
+  // Маппинг regions
+  const getRegionId = (locationId: string): string => {
+    const mapping: Record<string, string> = {
+      'production': REGION_PRODUCTION,
+      'staging': REGION_STAGING,
+    };
+    return mapping[locationId] || REGION_STAGING;
+  };
+
+  // Маппинг проектов
+  const getProjectId = (projectSlug: string): string => {
+    return PROJECT_DEFAULT;
+  };
+
+  // Маппинг templates
+  const getTemplateId = (imageId: string): string => {
+    return TEMPLATES[imageId] || TEMPLATES['ubuntu-22'];
+  };
+
+  // Маппинг plans
+  const getPlanId = (configId: string): string => {
+    return PLANS[configId] || PLANS['start-1'];
+  };
+
+  const handleCreate = async () => {
+    if (!formData.name || !formData.image || !formData.instanceConfig) {
+      setCreateError('Заполните все обязательные поля');
+      return;
+    }
+
+    setIsCreating(true);
+    setCreateError(null);
+
+    try {
+      const vmData = {
+        name: formData.name,
+        hostname: formData.name.toLowerCase().replace(/\s+/g, '-'),
+        cloud_provider: CLOUD_PROVIDER_NIMBO,
+        region: getRegionId(formData.location),
+        project: getProjectId(formData.project),
+        template: getTemplateId(formData.image),
+        plan: getPlanId(formData.instanceConfig),
+        disk_size: formData.volumeSize,
+        public_ip: formData.publicIp,
+      };
+
+      console.log('Creating VM with data:', vmData);
+      
+      await api.virtualMachines.create(vmData);
+      
+      // Успешное создание
+      onClose();
+      setCurrentStep(1);
+      setFormData({
+        location: 'production',
+        project: 'default',
+        newProjectName: '',
+        image: '',
+        instanceConfig: '',
+        volumeSize: 100,
+        networkType: 'isolated',
+        publicIp: false,
+        name: '',
+      });
+      setIsCreatingProject(false);
+      
+      // TODO: Обновить список ВМ на странице
+      window.location.reload(); // Временно перезагружаем страницу
+    } catch (error) {
+      console.error('Failed to create VM:', error);
+      setCreateError(error instanceof Error ? error.message : 'Ошибка создания ВМ');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const selectedLocation = locations.find(l => l.id === formData.location);
@@ -327,7 +439,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
               <Text fontSize="14px" fontWeight="600" color="gray.700">
                 Выберите образ операционной системы
               </Text>
-              <Grid templateColumns="repeat(3, 1fr)" gap="12px">
+              <Grid templateColumns="repeat(4, 1fr)" gap="12px">
                 {images.map((image) => (
                   <GridItem key={image.id}>
                     <Box
@@ -668,23 +780,42 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
 
         {/* Footer */}
         <Box p="24px" borderTop="1px solid" borderTopColor="gray.100">
-          <HStack justify="space-between">
-            <ModernButton variant="outline" size="md" onClick={handleBack} disabled={currentStep === 1}>
-              <LuChevronLeft size={18} />
-              Назад
-            </ModernButton>
-            {currentStep < 7 ? (
-              <ModernButton variant="gradient" size="md" onClick={handleNext}>
-                Далее
-                <LuChevronRight size={18} />
-              </ModernButton>
-            ) : (
-              <ModernButton variant="success" size="md" onClick={handleCreate}>
-                <LuCheck size={18} />
-                Создать ВМ
-              </ModernButton>
+          <VStack gap="12px" align="stretch">
+            {createError && (
+              <Box p="12px" borderRadius="8px" bg="red.50" border="1px solid" borderColor="red.200">
+                <Text fontSize="13px" color="red.700" fontWeight="500">
+                  {createError}
+                </Text>
+              </Box>
             )}
-          </HStack>
+            <HStack justify="space-between">
+              <ModernButton 
+                variant="outline" 
+                size="md" 
+                onClick={handleBack} 
+                disabled={currentStep === 1 || isCreating}
+              >
+                <LuChevronLeft size={18} />
+                Назад
+              </ModernButton>
+              {currentStep < 7 ? (
+                <ModernButton variant="gradient" size="md" onClick={handleNext}>
+                  Далее
+                  <LuChevronRight size={18} />
+                </ModernButton>
+              ) : (
+                <ModernButton 
+                  variant="success" 
+                  size="md" 
+                  onClick={handleCreate}
+                  loading={isCreating}
+                >
+                  <LuCheck size={18} />
+                  {isCreating ? 'Создание...' : 'Создать ВМ'}
+                </ModernButton>
+              )}
+            </HStack>
+          </VStack>
         </Box>
       </Box>
     </Box>

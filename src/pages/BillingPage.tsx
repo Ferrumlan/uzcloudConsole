@@ -22,13 +22,26 @@ export const BillingPage: React.FC = () => {
         setBalance(balanceData);
         setInvoices(invoicesData);
       } catch (err) {
-        console.error('Failed to load billing, using mock data:', err);
-        // Fallback на mock данные
+        console.error('Failed to load billing, using demo data:', err);
+        // Демо данные для preview
         setBalance({ balance: 1245000, currency: 'UZS' });
         setInvoices([
-          { id: 1, invoice_number: 'INV-2024-09', date: '2024-09-01', total: 387200, status: 'paid', currency: 'UZS' },
-          { id: 2, invoice_number: 'INV-2024-08', date: '2024-08-01', total: 412500, status: 'paid', currency: 'UZS' },
-          { id: 3, invoice_number: 'INV-2024-07', date: '2024-07-01', total: 398100, status: 'paid', currency: 'UZS' },
+          {
+            id: 1,
+            invoice_number: 'INV-2026-09',
+            date: '2026-09-01',
+            total: 387200,
+            status: 'paid',
+            currency: 'UZS',
+          },
+          {
+            id: 2,
+            invoice_number: 'INV-2026-08',
+            date: '2026-08-01',
+            total: 412500,
+            status: 'paid',
+            currency: 'UZS',
+          },
         ]);
       } finally {
         setLoading(false);

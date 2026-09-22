@@ -1,23 +1,29 @@
 import React, { useState } from 'react';
 import { Box, VStack, Text, Spinner } from '@chakra-ui/react';
-import { AppProvider, useApp } from './contexts/AppContext';
+import { useApp } from './contexts/AppContext';
 import { Layout } from './components/Layout';
 import { VMCreateWizard } from './components/VMCreateWizard';
 import { DashboardPage } from './pages/DashboardPage';
 import { VMListPage } from './pages/VMListPage';
 import { VMDetailPage } from './pages/VMDetailPage';
 import { BillingPage } from './pages/BillingPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
 import type { VirtualMachine } from './api/types';
-import { LuContainer, LuDatabase, LuNetwork, LuHardDrive, LuCamera, LuSettings, LuCircleAlert } from 'react-icons/lu';
+import { LuCircleAlert } from 'react-icons/lu';
+
+// Проверка переменных окружения
+console.log('Environment check:', {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  VITE_API_TOKEN: import.meta.env.VITE_API_TOKEN ? 'SET' : 'NOT SET',
+  VITE_USE_MOCK: import.meta.env.VITE_USE_MOCK,
+});
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, user, currentPage } = useApp();
+  const { isAuthenticated, user, currentPage, isLoading, loadError } = useApp();
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
   const [isCreateVMOpen, setIsCreateVMOpen] = useState(false);
 
   // Экран загрузки
-  if (!user) {
+  if (isLoading) {
     return (
       <Box
         minH="100vh"
@@ -36,8 +42,8 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Экран ошибки (если токен невалидный)
-  if (!isAuthenticated) {
+  // Экран ошибки (если токен невалидный или API недоступен)
+  if (!isAuthenticated || !user) {
     return (
       <Box
         minH="100vh"
@@ -74,6 +80,13 @@ const AppContent: React.FC = () => {
               <Text fontSize="16px" color="gray.600" textAlign="center">
                 Не удалось подключиться к API. Проверьте токен авторизации в файле .env
               </Text>
+              {loadError && (
+                <Box bg="#fef2f2" p="12px" borderRadius="8px" w="100%">
+                  <Text fontSize="14px" color="#dc2626" fontFamily="mono">
+                    {loadError}
+                  </Text>
+                </Box>
+              )}
             </VStack>
           </VStack>
         </Box>
@@ -98,54 +111,6 @@ const AppContent: React.FC = () => {
         );
       case 'billing':
         return <BillingPage />;
-      case 'kubernetes':
-        return (
-          <PlaceholderPage
-            title="Kubernetes"
-            description="Управление Kubernetes-кластерами. Раздел заблокирован до решения вопросов CSI/StorageClass, internal LB и схемы node-pools."
-            icon={<LuContainer />}
-          />
-        );
-      case 'objectStorage':
-        return (
-          <PlaceholderPage
-            title="Object Storage"
-            description="Управление объектным хранилищем. Раздел заблокирован до работоспособности POST /object-storages на уровне платформы."
-            icon={<LuDatabase />}
-          />
-        );
-      case 'networking':
-        return (
-          <PlaceholderPage
-            title="Сети"
-            description="Управление сетями, VPC, балансировщиками и виртуальными роутерами. Этап 7 — в разработке."
-            icon={<LuNetwork />}
-          />
-        );
-      case 'storage':
-        return (
-          <PlaceholderPage
-            title="Хранилища"
-            description="Управление блочными хранилищами. Этап 4 — в разработке."
-            icon={<LuHardDrive />}
-          />
-        );
-      case 'snapshots':
-        return (
-          <PlaceholderPage
-            title="Снапшоты"
-            description="Снапшоты ВМ, блочных хранилищ, бэкапы, шаблоны и ISO. Этап 6 — в разработке."
-            icon={<LuCamera />}
-          />
-        );
-      case 'settings':
-        return (
-          <PlaceholderPage
-            title="Настройки"
-            description="Настройки аккаунта, SSH-ключи, API-токены и предпочтения."
-            icon={<LuSettings />}
-          />
-        );
       default:
         return <DashboardPage />;
     }
@@ -153,19 +118,34 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      <Layout>{renderPage()}</Layout>
-      <VMCreateWizard
-        isOpen={isCreateVMOpen}
-        onClose={() => setIsCreateVMOpen(false)}
-      />
+      {loadError === 'DEMO_MODE' && (
+        <Box
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          bg="orange.500"
+          color="white"
+          p="8px"
+          textAlign="center"
+          fontSize="14px"
+          fontWeight="600"
+          zIndex={9999}
+        >
+          ⚠️ Демо-режим (API недоступен) — Разверните на VPS для реальных данных
+        </Box>
+      )}
+      <Box pt={loadError === 'DEMO_MODE' ? '40px' : '0'}>
+        <Layout>{renderPage()}</Layout>
+        <VMCreateWizard
+          isOpen={isCreateVMOpen}
+          onClose={() => setIsCreateVMOpen(false)}
+        />
+      </Box>
     </>
   );
 };
 
 export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
+  return <AppContent />;
 }

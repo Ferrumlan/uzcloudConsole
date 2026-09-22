@@ -3,23 +3,16 @@ import { Box, Flex, VStack, HStack, Text, Badge, Separator } from '@chakra-ui/re
 import { useApp } from '../contexts/AppContext';
 import { ModernButton } from './ModernButton';
 import { 
-  LuLayoutDashboard, LuServer, LuNetwork, LuHardDrive, LuCamera, 
-  LuCreditCard, LuContainer, LuDatabase, LuSettings, LuLogOut, 
+  LuLayoutDashboard, LuServer, LuCreditCard, LuLogOut, 
   LuGlobe, LuCloud
 } from 'react-icons/lu';
 
-type Page = 'dashboard' | 'vms' | 'networking' | 'storage' | 'snapshots' | 'billing' | 'kubernetes' | 'objectStorage' | 'settings';
+type Page = 'dashboard' | 'vms' | 'billing';
 
 const navItems: Array<{ id: Page; icon: any; label: string; badge?: string }> = [
   { id: 'dashboard', icon: LuLayoutDashboard, label: 'Обзор' },
   { id: 'vms', icon: LuServer, label: 'Виртуальные машины' },
-  { id: 'networking', icon: LuNetwork, label: 'Сети' },
-  { id: 'storage', icon: LuHardDrive, label: 'Хранилища' },
-  { id: 'snapshots', icon: LuCamera, label: 'Снапшоты' },
   { id: 'billing', icon: LuCreditCard, label: 'Финансы' },
-  { id: 'kubernetes', icon: LuContainer, label: 'Kubernetes', badge: 'скоро' },
-  { id: 'objectStorage', icon: LuDatabase, label: 'Object Storage', badge: 'скоро' },
-  { id: 'settings', icon: LuSettings, label: 'Настройки' },
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import type { User, Project } from '../api/types';
 import { api } from '../api/client';
 
-type Page = 'dashboard' | 'vms' | 'networking' | 'storage' | 'snapshots' | 'billing' | 'kubernetes' | 'objectStorage' | 'settings';
+type Page = 'dashboard' | 'vms' | 'billing';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -10,6 +10,8 @@ interface AppContextType {
   projects: Project[];
   currentPage: Page;
   language: 'ru' | 'uz' | 'en';
+  isLoading: boolean;
+  loadError: string | null;
   setCurrentPage: (page: Page) => void;
   setLanguage: (lang: 'ru' | 'uz' | 'en') => void;
   logout: () => void;
@@ -23,12 +25,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [language, setLanguage] = useState<'ru' | 'uz' | 'en'>('ru');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     // Автоматическая загрузка данных при старте
     const initApp = async () => {
+      setIsLoading(true);
       try {
-        // Пытаемся загрузить данные пользователя
+        // Загружаем данные пользователя
         const userData = await api.user.get();
         setUser(userData);
         setIsAuthenticated(true);
@@ -38,13 +43,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const projectsData = await api.projects.list();
           setProjects(projectsData);
         } catch (err) {
-          console.warn('Failed to load projects, using default:', err);
-          // Если не удалось загрузить проекты, используем production по умолчанию
-          setProjects([{ id: 1, name: 'Production', slug: 'production', is_default: true }]);
+          console.warn('Failed to load projects:', err);
+          setProjects([]);
         }
+        setLoadError(null);
       } catch (err) {
-        console.error('Failed to initialize app, using mock data:', err);
-        // Fallback на mock данные если API недоступен
+        console.error('Failed to initialize app, using demo mode:', err);
+        // Если API недоступен (CORS в preview), показываем демо
         setUser({
           id: 1,
           email: 'demo@uzcloud.uz',
@@ -52,7 +57,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           last_name: 'User',
         });
         setIsAuthenticated(true);
-        setProjects([{ id: 1, name: 'Production', slug: 'production', is_default: true }]);
+        setProjects([{ id: 1, name: 'Default', slug: 'default', is_default: true }]);
+        setLoadError('DEMO_MODE');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -73,6 +81,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         projects,
         currentPage,
         language,
+        isLoading,
+        loadError,
         setCurrentPage,
         setLanguage,
         logout,
