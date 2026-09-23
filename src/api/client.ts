@@ -8,61 +8,55 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 // Функция нормализации ВМ из API ответа
 function normalizeVM(apiVM: any): VirtualMachine {
-  // Извлекаем CPU/RAM из разных возможных структур
-  const cpu = apiVM.cpu || 
-              apiVM.service_offering?.cpu || 
-              apiVM.service_offering?.vcpu ||
-              apiVM.plan?.cpu || 
-              apiVM.configuration?.cpu ||
-              apiVM.resources?.cpu ||
-              0;
+  // Извлекаем CPU/RAM/Disk из offering (реальная структура API)
+  const offering = apiVM.offering || {};
   
-  const ram = apiVM.ram || 
-              apiVM.memory ||
-              apiVM.service_offering?.ram || 
-              apiVM.service_offering?.memory ||
-              apiVM.plan?.ram ||
-              apiVM.plan?.memory ||
-              apiVM.configuration?.ram ||
-              apiVM.resources?.ram ||
-              0;
+  // CPU: строка "4" → число 4
+  const cpu = parseInt(offering.cpu || apiVM.cpu || '0', 10) || 0;
   
-  const disk = apiVM.disk || 
-               apiVM.disk_size || 
-               apiVM.volume_size ||
-               apiVM.storage ||
-               apiVM.configuration?.disk ||
-               apiVM.resources?.disk ||
-               0;
+  // Memory: строка "4096" (MB) → число 4 (GB)
+  const memoryMB = parseInt(offering.memory || apiVM.memory || '0', 10) || 0;
+  const ram = memoryMB > 100 ? Math.round(memoryMB / 1024) : memoryMB; // Если > 100, значит в MB
+  
+  // Storage: строка "50" (GB) → число 50
+  const disk = parseInt(offering.storage || apiVM.disk || apiVM.disk_size || '0', 10) || 0;
 
-  // Извлекаем IP адрес
-  const ip_address = apiVM.ip_address || 
-                     apiVM.ip || 
-                     apiVM.public_ip ||
-                     apiVM.network?.ip ||
-                     apiVM.networking?.ip_address ||
-                     apiVM.nic?.ipaddress ||
-                     null;
+  // Извлекаем IP адрес из ipaddresses массива
+  let ip_address: string | null = null;
+  if (apiVM.ipaddresses && Array.isArray(apiVM.ipaddresses) && apiVM.ipaddresses.length > 0) {
+    // Ищем первый публичный IP
+    const publicIP = apiVM.ipaddresses.find((ip: any) => ip.is_public || ip.ip_type === 'public');
+    if (publicIP) {
+      ip_address = publicIP.ip_address || publicIP.ip || null;
+    } else {
+      // Если нет публичного, берём первый
+      ip_address = apiVM.ipaddresses[0]?.ip_address || apiVM.ipaddresses[0]?.ip || null;
+    }
+  }
+  
+  // Fallback на public_ip/private_ip
+  if (!ip_address) {
+    ip_address = apiVM.public_ip || apiVM.private_ip || null;
+  }
 
-  // Извлекаем статус
-  const status = (apiVM.status?.toLowerCase() || 
-                  apiVM.state?.toLowerCase() ||
+  // Извлекаем статус (state не status!)
+  const status = (apiVM.state?.toLowerCase() || 
+                  apiVM.status?.toLowerCase() ||
                   'stopped') as VMStatus;
 
   // Извлекаем зону/регион
-  const zone = apiVM.zone || 
+  const zone = apiVM.region?.name || 
+               apiVM.zone || 
                apiVM.zone_name ||
-               apiVM.region?.name || 
-               apiVM.region ||
                apiVM.location ||
                '';
 
   // Извлекаем шаблон/ОС
   const template = apiVM.template?.name || 
                    apiVM.template_name ||
+                   apiVM.operating_system?.name ||
                    apiVM.template || 
                    apiVM.os ||
-                   apiVM.os_type ||
                    '';
 
   return {

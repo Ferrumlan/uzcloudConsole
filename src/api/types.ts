@@ -44,8 +44,9 @@ export interface Plan {
   id: string;
   slug: string;
   name: string;
-  cpu?: number;
-  ram?: number;
+  cpu?: number | string;
+  ram?: number | string;
+  memory?: number | string;
 }
 
 export interface User {
