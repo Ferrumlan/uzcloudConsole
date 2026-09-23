@@ -1,7 +1,7 @@
-export type VMStatus = 'running' | 'stopped' | 'starting' | 'stopping' | 'error';
+export type VMStatus = 'running' | 'stopped' | 'starting' | 'stopping' | 'error' | 'deploying';
 
 export interface VirtualMachine {
-  id: number;
+  id: number | string;
   slug: string;
   name: string;
   hostname: string;

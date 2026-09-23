@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator } from '@chakra-ui/react';
 import { ModernButton } from './ModernButton';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../api/client';
-import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft } from 'react-icons/lu';
+import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft, LuX } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
   isOpen: boolean;
@@ -48,8 +48,24 @@ const volumeSizes = [50, 100, 200, 500, 1000];
 
 export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose }) => {
   const { projects } = useApp();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
+  
+  // Загрузка сохраненного состояния из localStorage
+  const loadSavedState = () => {
+    try {
+      const saved = localStorage.getItem('vmCreateWizardState');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load wizard state:', e);
+    }
+    return null;
+  };
+
+  const savedState = loadSavedState();
+  
+  const [currentStep, setCurrentStep] = useState(savedState?.currentStep || 1);
+  const [formData, setFormData] = useState(savedState?.formData || {
     location: 'production',
     project: 'default',
     newProjectName: '',
@@ -63,6 +79,30 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Сохранение состояния в localStorage при изменениях
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        localStorage.setItem('vmCreateWizardState', JSON.stringify({
+          currentStep,
+          formData,
+        }));
+      } catch (e) {
+        console.error('Failed to save wizard state:', e);
+      }
+    }
+  }, [currentStep, formData, isOpen]);
+
+  // Сброс состояния при закрытии
+  const handleClose = () => {
+    try {
+      localStorage.removeItem('vmCreateWizardState');
+    } catch (e) {
+      console.error('Failed to clear wizard state:', e);
+    }
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -171,7 +211,13 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       
       await api.virtualMachines.create(vmData);
       
-      // Успешное создание
+      // Успешное создание - очищаем состояние
+      try {
+        localStorage.removeItem('vmCreateWizardState');
+      } catch (e) {
+        console.error('Failed to clear wizard state:', e);
+      }
+      
       onClose();
       setCurrentStep(1);
       setFormData({
@@ -228,9 +274,14 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         {/* Header */}
         <Box p="24px" borderBottom="1px solid" borderBottomColor="gray.100">
           <VStack gap="16px" align="stretch">
-            <Heading size="xl" fontWeight="700">
-              Создать виртуальную машину
-            </Heading>
+            <HStack justify="space-between" align="center">
+              <Heading size="xl" fontWeight="700">
+                Создать виртуальную машину
+              </Heading>
+              <ModernButton variant="ghost" size="sm" onClick={handleClose}>
+                <LuX size={20} />
+              </ModernButton>
+            </HStack>
             
             {/* Steps */}
             <HStack gap="4px" overflowX="auto" pb="4px">

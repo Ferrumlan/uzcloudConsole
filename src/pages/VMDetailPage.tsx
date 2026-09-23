@@ -11,19 +11,49 @@ interface VMDetailPageProps {
 }
 
 export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     running: 'success',
     stopped: 'danger',
     starting: 'warning',
     stopping: 'warning',
     error: 'danger',
+    deploying: 'info',
   };
 
+  // Защита от undefined значений
+  if (!vm) {
+    return (
+      <Box p="32px" textAlign="center">
+        <Text fontSize="18px" color="gray.600">Виртуальная машина не найдена</Text>
+        <Box mt="16px">
+          <ModernButton variant="outline" size="md" onClick={onBack}>
+            Назад
+          </ModernButton>
+        </Box>
+      </Box>
+    );
+  }
+
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ru-RU', {
-      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
+    try {
+      return new Date(dateStr).toLocaleDateString('ru-RU', {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return 'Неизвестно';
+    }
   };
+
+  // Fallback значения
+  const vmName = vm.name || 'Без имени';
+  const vmHostname = vm.hostname || '—';
+  const vmStatus = vm.status || 'stopped';
+  const vmCpu = vm.cpu || 0;
+  const vmRam = vm.ram || 0;
+  const vmDisk = vm.disk || 0;
+  const vmIp = vm.ip_address || '—';
+  const vmZone = vm.zone || '—';
+  const vmTemplate = vm.template || '—';
 
   return (
     <Box>
@@ -37,10 +67,10 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
             <VStack gap="4px" align="start">
               <HStack gap="12px">
                 <Heading size="xl" fontWeight="700" letterSpacing="-0.02em">
-                  {vm.name}
+                  {vmName}
                 </Heading>
                 <Badge
-                  colorPalette={statusColors[vm.status]}
+                  colorPalette={statusColors[vmStatus]}
                   variant="subtle"
                   size="lg"
                   borderRadius="8px"
@@ -48,22 +78,22 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   py="6px"
                   fontWeight="600"
                 >
-                  {vm.status === 'running' ? 'Работает' : vm.status === 'stopped' ? 'Остановлена' : vm.status}
+                  {vmStatus === 'running' ? 'Работает' : vmStatus === 'stopped' ? 'Остановлена' : vmStatus}
                 </Badge>
               </HStack>
               <Text fontSize="14px" color="gray.500" fontFamily="mono">
-                {vm.hostname}
+                {vmHostname}
               </Text>
             </VStack>
           </HStack>
 
           <HStack gap="8px">
-            {vm.status === 'stopped' && (
+            {vmStatus === 'stopped' && (
               <ModernButton variant="success" size="md" icon={<LuPlay size={18} />}>
                 Запустить
               </ModernButton>
             )}
-            {vm.status === 'running' && (
+            {vmStatus === 'running' && (
               <>
                 <ModernButton variant="danger" size="md" icon={<LuSquare size={18} />}>
                   Остановить
@@ -92,7 +122,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   CPU
                 </Text>
                 <Text fontSize="20px" fontWeight="700">
-                  {vm.cpu} vCPU
+                  {vmCpu} vCPU
                 </Text>
               </VStack>
             </HStack>
@@ -108,7 +138,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   Память
                 </Text>
                 <Text fontSize="20px" fontWeight="700">
-                  {vm.ram} GB
+                  {vmRam} GB
                 </Text>
               </VStack>
             </HStack>
@@ -124,7 +154,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   Диск
                 </Text>
                 <Text fontSize="20px" fontWeight="700">
-                  {vm.disk} GB
+                  {vmDisk} GB
                 </Text>
               </VStack>
             </HStack>
@@ -140,7 +170,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   IP адрес
                 </Text>
                 <Text fontSize="20px" fontWeight="700" fontFamily="mono">
-                  {vm.ip_address || '—'}
+                  {vmIp}
                 </Text>
               </VStack>
             </HStack>
@@ -156,7 +186,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   Зона
                 </Text>
                 <Text fontSize="20px" fontWeight="700">
-                  {vm.zone}
+                  {vmZone}
                 </Text>
               </VStack>
             </HStack>
@@ -172,7 +202,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                   Создана
                 </Text>
                 <Text fontSize="16px" fontWeight="700">
-                  {formatDate(vm.created_at)}
+                  {formatDate(vm.created_at || new Date().toISOString())}
                 </Text>
               </VStack>
             </HStack>
@@ -184,7 +214,7 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
           <VStack gap="16px" align="stretch">
             <HStack justify="space-between">
               <Text fontSize="14px" color="gray.600">Шаблон</Text>
-              <Text fontSize="14px" fontWeight="600">{vm.template}</Text>
+              <Text fontSize="14px" fontWeight="600">{vmTemplate}</Text>
             </HStack>
             <Separator />
             <HStack justify="space-between">
