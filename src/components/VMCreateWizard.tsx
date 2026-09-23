@@ -171,7 +171,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         template: formData.image, // slug из templates API
         plan: formData.instanceConfig, // slug из plans API
         disk_size: formData.volumeSize,
-        public_ip: formData.publicIp,
+        network_type: formData.networkType, // 'isolated' или 'vpc'
+        public_ip: formData.publicIp, // boolean, преобразуется в массив в client.ts
         storage_category: formData.storageCategory, // slug из storage categories API
         billing_cycle: formData.billingCycle, // slug из billing cycles API
       };
