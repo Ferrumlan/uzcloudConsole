@@ -8,18 +8,75 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 // Функция нормализации ВМ из API ответа
 function normalizeVM(apiVM: any): VirtualMachine {
+  // Извлекаем CPU/RAM из разных возможных структур
+  const cpu = apiVM.cpu || 
+              apiVM.service_offering?.cpu || 
+              apiVM.service_offering?.vcpu ||
+              apiVM.plan?.cpu || 
+              apiVM.configuration?.cpu ||
+              apiVM.resources?.cpu ||
+              0;
+  
+  const ram = apiVM.ram || 
+              apiVM.memory ||
+              apiVM.service_offering?.ram || 
+              apiVM.service_offering?.memory ||
+              apiVM.plan?.ram ||
+              apiVM.plan?.memory ||
+              apiVM.configuration?.ram ||
+              apiVM.resources?.ram ||
+              0;
+  
+  const disk = apiVM.disk || 
+               apiVM.disk_size || 
+               apiVM.volume_size ||
+               apiVM.storage ||
+               apiVM.configuration?.disk ||
+               apiVM.resources?.disk ||
+               0;
+
+  // Извлекаем IP адрес
+  const ip_address = apiVM.ip_address || 
+                     apiVM.ip || 
+                     apiVM.public_ip ||
+                     apiVM.network?.ip ||
+                     apiVM.networking?.ip_address ||
+                     apiVM.nic?.ipaddress ||
+                     null;
+
+  // Извлекаем статус
+  const status = (apiVM.status?.toLowerCase() || 
+                  apiVM.state?.toLowerCase() ||
+                  'stopped') as VMStatus;
+
+  // Извлекаем зону/регион
+  const zone = apiVM.zone || 
+               apiVM.zone_name ||
+               apiVM.region?.name || 
+               apiVM.region ||
+               apiVM.location ||
+               '';
+
+  // Извлекаем шаблон/ОС
+  const template = apiVM.template?.name || 
+                   apiVM.template_name ||
+                   apiVM.template || 
+                   apiVM.os ||
+                   apiVM.os_type ||
+                   '';
+
   return {
     id: apiVM.id,
     slug: apiVM.slug || apiVM.id?.toString() || '',
-    name: apiVM.name || apiVM.hostname || 'Unknown',
+    name: apiVM.name || apiVM.hostname || apiVM.display_name || 'Unknown',
     hostname: apiVM.hostname || apiVM.name || '',
-    status: (apiVM.status?.toLowerCase() || 'stopped') as VMStatus,
-    cpu: apiVM.cpu || apiVM.service_offering?.cpu || apiVM.plan?.cpu || 0,
-    ram: apiVM.ram || apiVM.service_offering?.ram || apiVM.plan?.ram || 0,
-    disk: apiVM.disk || apiVM.disk_size || apiVM.volume_size || 0,
-    ip_address: apiVM.ip_address || apiVM.ip || apiVM.public_ip || null,
-    zone: apiVM.zone || apiVM.region?.name || apiVM.region || '',
-    template: apiVM.template?.name || apiVM.template || apiVM.os || '',
+    status: status,
+    cpu: cpu,
+    ram: ram,
+    disk: disk,
+    ip_address: ip_address,
+    zone: zone,
+    template: template,
     project_slug: apiVM.project?.slug || apiVM.project || 'default',
     created_at: apiVM.created_at || new Date().toISOString(),
   };
@@ -119,7 +176,14 @@ export const api = {
   plans: {
     listVMPlans: async () => {
       const response = await apiRequest<any>('/plans/service/Virtual Machine');
-      return response.data?.data || response.data || [];
+      const data = response.data?.data || response.data || [];
+      
+      // Логируем первый план для отладки структуры
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('Plan API Response Sample:', JSON.stringify(data[0], null, 2));
+      }
+      
+      return data;
     },
   },
   
@@ -129,12 +193,22 @@ export const api = {
       const params = projectSlug ? `?project_slug=${projectSlug}` : '';
       const response = await apiRequest<any>(`/virtual-machines${params}`);
       const data = response.data?.data || response.data || [];
+      
+      // Логируем первую ВМ для отладки структуры
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('VM API Response Sample:', JSON.stringify(data[0], null, 2));
+      }
+      
       return Array.isArray(data) ? data.map(normalizeVM) : [];
     },
 
     get: async (slug: string): Promise<VirtualMachine> => {
       const response = await apiRequest<any>(`/virtual-machines/${slug}`);
       const data = response.data || response;
+      
+      // Логируем полную структуру для отладки
+      console.log('VM Detail API Response:', JSON.stringify(data, null, 2));
+      
       return normalizeVM(data);
     },
 
@@ -150,11 +224,32 @@ export const api = {
       disk_size?: number;
       network_type?: string;
       public_ip?: boolean;
+      billing_cycle?: string;
+      storage_category?: string;
+      blockstorage_custom_plan?: {
+        storage: number;
+      };
       [key: string]: any;
     }): Promise<VirtualMachine> => {
+      // Добавляем обязательные поля если их нет
+      const payload = {
+        ...data,
+        billing_cycle: data.billing_cycle || 'monthly',
+        storage_category: data.storage_category || 'standard',
+      };
+      
+      // Если указан disk_size, добавляем blockstorage_custom_plan
+      if (data.disk_size && !data.blockstorage_custom_plan) {
+        payload.blockstorage_custom_plan = {
+          storage: data.disk_size
+        };
+      }
+      
+      console.log('Creating VM with payload:', payload);
+      
       const response = await apiRequest<any>('/virtual-machines', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       }, 60000); // 60 секунд для создания ВМ
       return response.data || response;
     },

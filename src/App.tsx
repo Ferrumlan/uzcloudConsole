@@ -22,6 +22,11 @@ const AppContent: React.FC = () => {
   const [selectedVM, setSelectedVM] = useState<VirtualMachine | null>(null);
   const [isCreateVMOpen, setIsCreateVMOpen] = useState(false);
 
+  // Сбрасываем выбранную ВМ при смене страницы
+  React.useEffect(() => {
+    setSelectedVM(null);
+  }, [currentPage]);
+
   // Экран загрузки
   if (isLoading) {
     return (
