@@ -4,7 +4,7 @@ import { ModernButton } from './ModernButton';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../api/client';
 import type { Project, Region, Template, Plan } from '../api/types';
-import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft, LuX, LuCircleAlert } from 'react-icons/lu';
+import { LuMapPin, LuFolder, LuImage, LuCpu, LuMemoryStick, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft, LuX, LuCircleAlert } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
   isOpen: boolean;
@@ -73,10 +73,17 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         api.plans.listVMPlans(),
       ]);
 
+      // Нормализуем планы - конвертируем строки в числа
+      const normalizedPlans = plansData.map((plan: any) => ({
+        ...plan,
+        cpu: parseInt(plan.cpu || '0', 10) || 0,
+        ram: parseInt(plan.ram || plan.memory || '0', 10) || 0,
+      }));
+
       setRegions(regionsData);
       setProjects(projectsData);
       setTemplates(templatesData);
-      setPlans(plansData);
+      setPlans(normalizedPlans);
 
       // Установить первые значения по умолчанию
       if (!formData.location && regionsData.length > 0) {
@@ -575,7 +582,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                             </VStack>
                           </HStack>
                           <HStack gap="8px">
-                            <LuCpu size={20} color="#64748b" />
+                            <LuMemoryStick size={20} color="#64748b" />
                             <VStack gap="0" align="start">
                               <Text fontSize="11px" color="gray.500">vRAM</Text>
                               <Text fontSize="16px" fontWeight="700" color="gray.900">
