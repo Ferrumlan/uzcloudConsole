@@ -11,8 +11,8 @@ interface VMCreateWizardProps {
 }
 
 const locations = [
-  { id: 'production', name: 'Production', region: 'Tashkent-1' },
-  { id: 'staging', name: 'Staging', region: 'Tashkent-1' },
+  { id: 'production', name: 'PRODUCTION', region: 'Tashkent-1' },
+  { id: 'staging', name: 'STAGING', region: 'Tashkent-1' },
 ];
 
 const images = [
@@ -124,11 +124,11 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  // Реальные ID из API (получены через curl)
-  const CLOUD_PROVIDER_NIMBO = 'a127f722-d4bd-4715-a627-b549ea112fdf';
-  const REGION_STAGING = 'a2155064-1f9f-4369-8932-951aaa3ea724';
-  const REGION_PRODUCTION = 'a127f724-c39c-45a0-a3bd-ceafa350e9b2';
-  const PROJECT_DEFAULT = 'a21d2d63-e747-497d-8abd-bea57f57dd8a';
+  // Реальные slug из API (получены через curl)
+  const CLOUD_PROVIDER_NIMBO = 'nimbo';
+  const REGION_STAGING = 'staging';
+  const REGION_PRODUCTION = 'production';
+  const PROJECT_DEFAULT = 'default-8';
 
   // Templates ID (все из API)
   const TEMPLATES: Record<string, string> = {
@@ -161,8 +161,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     '2c-8g': 'a21557d2-4c1c-4d72-9de1-3efc91f5e1c4',
   };
 
-  // Маппинг regions
-  const getRegionId = (locationId: string): string => {
+  // Маппинг regions (возвращаем slug)
+  const getRegionSlug = (locationId: string): string => {
     const mapping: Record<string, string> = {
       'production': REGION_PRODUCTION,
       'staging': REGION_STAGING,
@@ -170,8 +170,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     return mapping[locationId] || REGION_STAGING;
   };
 
-  // Маппинг проектов
-  const getProjectId = (projectSlug: string): string => {
+  // Маппинг проектов (возвращаем slug)
+  const getProjectSlug = (projectSlug: string): string => {
     return PROJECT_DEFAULT;
   };
 
@@ -199,8 +199,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         name: formData.name,
         hostname: formData.name.toLowerCase().replace(/\s+/g, '-'),
         cloud_provider: CLOUD_PROVIDER_NIMBO,
-        region: getRegionId(formData.location),
-        project: getProjectId(formData.project),
+        region: getRegionSlug(formData.location),
+        project: getProjectSlug(formData.project),
         template: getTemplateId(formData.image),
         plan: getPlanId(formData.instanceConfig),
         disk_size: formData.volumeSize,
