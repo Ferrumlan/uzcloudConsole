@@ -11,7 +11,7 @@ interface VMCreateWizardProps {
   onClose: () => void;
 }
 
-const volumeSizes = [50, 100, 200, 500, 1000];
+const volumeSizes = [20, 50, 100, 200, 500, 1000];
 
 export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose }) => {
   // Загрузка сохраненного состояния из localStorage
