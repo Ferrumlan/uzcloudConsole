@@ -1,7 +1,7 @@
-export type VMStatus = 'running' | 'stopped' | 'starting' | 'stopping' | 'error';
+export type VMStatus = 'running' | 'stopped' | 'starting' | 'stopping' | 'error' | 'deploying';
 
 export interface VirtualMachine {
-  id: number;
+  id: number | string;
   slug: string;
   name: string;
   hostname: string;
@@ -17,11 +17,35 @@ export interface VirtualMachine {
 }
 
 export interface Project {
-  id: number;
+  id: number | string;
   slug: string;
   name: string;
   description?: string;
-  is_default: boolean;
+  is_default?: boolean;
+}
+
+export interface Region {
+  id: string;
+  slug: string;
+  name: string;
+  cloud_provider?: {
+    slug: string;
+    name: string;
+  };
+}
+
+export interface Template {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface Plan {
+  id: string;
+  slug: string;
+  name: string;
+  cpu?: number;
+  ram?: number;
 }
 
 export interface User {

@@ -1,10 +1,29 @@
-import type { VirtualMachine, Project, Invoice, AccountBalance, User } from './types';
+import type { VirtualMachine, Project, Invoice, AccountBalance, User, VMStatus } from './types';
 
 // В dev режиме используем прокси, в production - прямой URL
 const API_BASE_URL = import.meta.env.DEV 
   ? '/api' 
   : (import.meta.env.VITE_API_BASE_URL || 'https://uzcloud.stackpoc.in/backend/api');
 const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
+
+// Функция нормализации ВМ из API ответа
+function normalizeVM(apiVM: any): VirtualMachine {
+  return {
+    id: apiVM.id,
+    slug: apiVM.slug || apiVM.id?.toString() || '',
+    name: apiVM.name || apiVM.hostname || 'Unknown',
+    hostname: apiVM.hostname || apiVM.name || '',
+    status: (apiVM.status?.toLowerCase() || 'stopped') as VMStatus,
+    cpu: apiVM.cpu || apiVM.service_offering?.cpu || apiVM.plan?.cpu || 0,
+    ram: apiVM.ram || apiVM.service_offering?.ram || apiVM.plan?.ram || 0,
+    disk: apiVM.disk || apiVM.disk_size || apiVM.volume_size || 0,
+    ip_address: apiVM.ip_address || apiVM.ip || apiVM.public_ip || null,
+    zone: apiVM.zone || apiVM.region?.name || apiVM.region || '',
+    template: apiVM.template?.name || apiVM.template || apiVM.os || '',
+    project_slug: apiVM.project?.slug || apiVM.project || 'default',
+    created_at: apiVM.created_at || new Date().toISOString(),
+  };
+}
 
 console.log('API Configuration:', {
   baseURL: API_BASE_URL,
@@ -109,12 +128,14 @@ export const api = {
     list: async (projectSlug?: string): Promise<VirtualMachine[]> => {
       const params = projectSlug ? `?project_slug=${projectSlug}` : '';
       const response = await apiRequest<any>(`/virtual-machines${params}`);
-      return response.data?.data || response.data || [];
+      const data = response.data?.data || response.data || [];
+      return Array.isArray(data) ? data.map(normalizeVM) : [];
     },
 
     get: async (slug: string): Promise<VirtualMachine> => {
       const response = await apiRequest<any>(`/virtual-machines/${slug}`);
-      return response.data || response;
+      const data = response.data || response;
+      return normalizeVM(data);
     },
 
     create: async (data: {

@@ -100,12 +100,13 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
            (vm.ip_address && vm.ip_address.includes(searchQuery));
   });
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     running: 'success',
     stopped: 'danger',
     starting: 'warning',
     stopping: 'warning',
     error: 'danger',
+    deploying: 'info',
   };
 
   return (
