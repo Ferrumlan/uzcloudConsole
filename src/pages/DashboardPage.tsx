@@ -16,11 +16,13 @@ export const DashboardPage: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
+        console.log('Loading dashboard data with VM details...');
         const [vmsData, balanceData, invoicesData] = await Promise.all([
-          api.virtualMachines.list(),
+          api.virtualMachines.list(undefined, true), // loadDetails=true для полной конфигурации
           api.billing.getBalance(),
           api.billing.getInvoices(),
         ]);
+        console.log('Dashboard data loaded:', { vms: vmsData.length, balance: balanceData, invoices: invoicesData.length });
         setVms(vmsData);
         setBalance(balanceData);
         setInvoices(invoicesData);
