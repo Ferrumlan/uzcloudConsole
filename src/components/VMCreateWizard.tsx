@@ -16,32 +16,34 @@ const locations = [
 ];
 
 const images = [
-  { id: 'ubuntu-24', name: 'Ubuntu 24.04 LTS', icon: '🐧', os: 'Linux' },
-  { id: 'ubuntu-22', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
-  { id: 'centos-7', name: 'CentOS-7', icon: '🎩', os: 'Linux' },
+  { id: 'ubuntu-2404-lts-1', name: 'Ubuntu 24.04 LTS', icon: '🐧', os: 'Linux' },
+  { id: 'ubuntu-2204-lts', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
+  { id: 'centos-7-1', name: 'CentOS-7', icon: '🎩', os: 'Linux' },
   { id: 'centos-9', name: 'CentOS-9', icon: '🎩', os: 'Linux' },
   { id: 'centos-stream-10', name: 'CentOS Stream 10', icon: '🎩', os: 'Linux' },
   { id: 'debian-13', name: 'Debian 13', icon: '🌀', os: 'Linux' },
-  { id: 'debian-12', name: 'Debian-12', icon: '🌀', os: 'Linux' },
+  { id: 'debian-12-2', name: 'Debian-12', icon: '🌀', os: 'Linux' },
   { id: 'debian-11', name: 'Debian 11', icon: '🌀', os: 'Linux' },
-  { id: 'rocky-9', name: 'Rocky Linux 9.7', icon: '🪨', os: 'Linux' },
-  { id: 'rocky-8', name: 'Rocky Linux 8', icon: '🪨', os: 'Linux' },
-  { id: 'alma-9', name: 'AlmaLinux-9', icon: '🦬', os: 'Linux' },
-  { id: 'alma-8', name: 'AlmaLinux-8', icon: '🦬', os: 'Linux' },
+  { id: 'rocky-linux-97', name: 'Rocky Linux 9.7', icon: '🪨', os: 'Linux' },
+  { id: 'rocky-linux-8', name: 'Rocky Linux 8', icon: '🪨', os: 'Linux' },
+  { id: 'almalinux-9-1', name: 'AlmaLinux-9', icon: '🦬', os: 'Linux' },
+  { id: 'almalinux-8', name: 'AlmaLinux-8', icon: '🦬', os: 'Linux' },
   { id: 'suse-16', name: 'SUSE-16', icon: '🦎', os: 'Linux' },
-  { id: 'windows-2025', name: 'Windows Server 2025', icon: '🪟', os: 'Windows' },
-  { id: 'windows-2022', name: 'Windows Server 2022', icon: '🪟', os: 'Windows' },
-  { id: 'windows-2019', name: 'Windows server 2019', icon: '🪟', os: 'Windows' },
-  { id: 'freebsd', name: 'FREEPBX', icon: '📞', os: 'Linux' },
-  { id: 'opnsense', name: 'OPNsense-26.1.6', icon: '🔥', os: 'Linux' },
+  { id: 'windows-server-2025', name: 'Windows Server 2025', icon: '🪟', os: 'Windows' },
+  { id: 'windows-server-2022', name: 'Windows Server 2022', icon: '🪟', os: 'Windows' },
+  { id: 'windows-server-2019', name: 'Windows server 2019', icon: '🪟', os: 'Windows' },
+  { id: 'freepbx', name: 'FREEPBX', icon: '📞', os: 'Linux' },
+  { id: 'opnsense-2616', name: 'OPNsense-26.1.6', icon: '🔥', os: 'Linux' },
   { id: 'issabel4', name: 'ISSABEL4', icon: '📞', os: 'Linux' },
-  { id: 'pfsense', name: 'Pfsense.2.7', icon: '🔥', os: 'Linux' },
+  { id: 'pfsense27', name: 'Pfsense.2.7', icon: '🔥', os: 'Linux' },
 ];
 
 const instanceConfigs = [
   { id: 'start-1', name: 'Start-1', cpu: 1, ram: 1, price: 0 },
   { id: 'plan-2', name: 'Plan-2', cpu: 2, ram: 4, price: 0 },
   { id: '2c-8g', name: '2C 8G', cpu: 2, ram: 8, price: 0 },
+  { id: 'gpu-1-1xnvidia-a40', name: 'GPU-1 (1xNvidia A40)', cpu: 8, ram: 32, price: 0 },
+  { id: 'gpu-2-2xnvidia-a40', name: 'GPU-2 (2xNvidia A40)', cpu: 16, ram: 64, price: 0 },
 ];
 
 const volumeSizes = [50, 100, 200, 500, 1000];
@@ -130,36 +132,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const REGION_PRODUCTION = 'production';
   const PROJECT_DEFAULT = 'default-8';
 
-  // Templates ID (все из API)
-  const TEMPLATES: Record<string, string> = {
-    'ubuntu-24': 'a145bd0b-43d7-40f9-a0e3-423eff08e9f4',
-    'ubuntu-22': 'a14fb343-50df-4c98-9db8-51d223722c88',
-    'centos-7': 'a162551d-e581-4493-b7a0-881dcf133464',
-    'centos-9': 'a1664afb-a68a-4dfa-bdfd-2887c21f0b3d',
-    'centos-stream-10': 'a1663930-a5d5-48b4-b6ed-940d8e2f507a',
-    'debian-13': 'a155e997-40fb-4fe1-8e34-d489ab4ceaf5',
-    'debian-12': 'a16bf518-ae91-4eb6-9bf5-aef9f1fd2d6b',
-    'debian-11': 'a216f38f-59e9-4d2f-b4fd-0c8d8b322a86',
-    'rocky-9': 'a15415b5-30c5-4175-84a4-e001588becc0',
-    'rocky-8': 'a16be268-878c-4f45-883b-6355d4643a0e',
-    'alma-9': 'a16635ac-a223-4f19-8d57-f8348913ddf3',
-    'alma-8': 'a1663536-7e99-469b-b27e-9b493e7f0f50',
-    'suse-16': 'a149f526-9d31-4139-ac7c-eded0b2569fe',
-    'windows-2025': 'a1603364-b3a2-4961-86e4-1804fb019f3f',
-    'windows-2022': 'a1624bd7-bb1b-4770-9406-6748a4a9a51c',
-    'windows-2019': 'a1623e4d-5010-4d7a-877b-26f8cec58673',
-    'freebsd': 'a1880e27-0da5-4dfe-a852-ea465b5bcef5',
-    'opnsense': 'a1f13a77-f36f-4e04-8517-592ad6e28b6d',
-    'issabel4': 'a18815ff-813b-44dd-9eff-0b4b8f4d5fd0',
-    'pfsense': 'a198a36f-f9e2-4f19-b405-cf13ed0c22ec',
-  };
-
-  // Plans ID
-  const PLANS: Record<string, string> = {
-    'start-1': 'a165cb8e-0cef-47a9-9c18-e1270d6b607b',
-    'plan-2': 'a1300a00-bac5-451f-be77-6b074b26a6a7',
-    '2c-8g': 'a21557d2-4c1c-4d72-9de1-3efc91f5e1c4',
-  };
+  // Templates и Plans теперь используют slug напрямую из API
+  // ID в images и instanceConfigs совпадают со slug'ами из API
 
   // Маппинг regions (возвращаем slug)
   const getRegionSlug = (locationId: string): string => {
@@ -175,15 +149,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     return PROJECT_DEFAULT;
   };
 
-  // Маппинг templates
-  const getTemplateId = (imageId: string): string => {
-    return TEMPLATES[imageId] || TEMPLATES['ubuntu-22'];
-  };
-
-  // Маппинг plans
-  const getPlanId = (configId: string): string => {
-    return PLANS[configId] || PLANS['start-1'];
-  };
+  // Templates и Plans передаются как slug напрямую
 
   const handleCreate = async () => {
     if (!formData.name || !formData.image || !formData.instanceConfig) {
@@ -201,8 +167,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         cloud_provider: CLOUD_PROVIDER_NIMBO,
         region: getRegionSlug(formData.location),
         project: getProjectSlug(formData.project),
-        template: getTemplateId(formData.image),
-        plan: getPlanId(formData.instanceConfig),
+        template: formData.image,
+        plan: formData.instanceConfig,
         disk_size: formData.volumeSize,
         public_ip: formData.publicIp,
       };
