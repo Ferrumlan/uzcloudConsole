@@ -8,8 +8,12 @@ const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
 
 // Функция нормализации ВМ из API ответа
 function normalizeVM(apiVM: any): VirtualMachine {
+  console.log('Normalizing VM:', apiVM.slug || apiVM.id);
+  
   // Извлекаем CPU/RAM/Disk из offering (реальная структура API)
   const offering = apiVM.offering || {};
+  
+  console.log('Offering data:', offering);
   
   // CPU: строка "4" → число 4
   const cpu = parseInt(offering.cpu || apiVM.cpu || '0', 10) || 0;
@@ -21,9 +25,12 @@ function normalizeVM(apiVM: any): VirtualMachine {
   // Storage: строка "50" (GB) → число 50
   const disk = parseInt(offering.storage || apiVM.disk || apiVM.disk_size || '0', 10) || 0;
 
+  console.log('Extracted config:', { cpu, ram, disk, memoryMB });
+
   // Извлекаем IP адрес из ipaddresses массива
   let ip_address: string | null = null;
   if (apiVM.ipaddresses && Array.isArray(apiVM.ipaddresses) && apiVM.ipaddresses.length > 0) {
+    console.log('IP addresses found:', apiVM.ipaddresses.length);
     // Ищем первый публичный IP
     const publicIP = apiVM.ipaddresses.find((ip: any) => ip.is_public || ip.ip_type === 'public');
     if (publicIP) {
@@ -59,7 +66,7 @@ function normalizeVM(apiVM: any): VirtualMachine {
                    apiVM.os ||
                    '';
 
-  return {
+  const normalized = {
     id: apiVM.id,
     slug: apiVM.slug || apiVM.id?.toString() || '',
     name: apiVM.name || apiVM.hostname || apiVM.display_name || 'Unknown',
@@ -74,6 +81,10 @@ function normalizeVM(apiVM: any): VirtualMachine {
     project_slug: apiVM.project?.slug || apiVM.project || 'default',
     created_at: apiVM.created_at || new Date().toISOString(),
   };
+
+  console.log('Normalized VM:', normalized);
+
+  return normalized;
 }
 
 console.log('API Configuration:', {
@@ -174,7 +185,17 @@ export const api = {
       
       // Логируем первый план для отладки структуры
       if (Array.isArray(data) && data.length > 0) {
-        console.log('Plan API Response Sample:', JSON.stringify(data[0], null, 2));
+        console.log('=== Plans API Response ===');
+        console.log('Total plans:', data.length);
+        console.log('First plan keys:', Object.keys(data[0]));
+        console.log('First plan sample:', {
+          id: data[0].id,
+          slug: data[0].slug,
+          name: data[0].name,
+          has_attribute: !!data[0].attribute,
+          attribute: data[0].attribute,
+          monthly_price: data[0].monthly_price,
+        });
       }
       
       return data;
@@ -199,17 +220,49 @@ export const api = {
   
   // Virtual Machines
   virtualMachines: {
-    list: async (projectSlug?: string): Promise<VirtualMachine[]> => {
+    list: async (projectSlug?: string, loadDetails: boolean = false): Promise<VirtualMachine[]> => {
       const params = projectSlug ? `?project_slug=${projectSlug}` : '';
       const response = await apiRequest<any>(`/virtual-machines${params}`);
       const data = response.data?.data || response.data || [];
       
       // Логируем первую ВМ для отладки структуры
       if (Array.isArray(data) && data.length > 0) {
-        console.log('VM API Response Sample:', JSON.stringify(data[0], null, 2));
+        console.log('=== VM List API Response ===');
+        console.log('Total VMs:', data.length);
+        console.log('First VM keys:', Object.keys(data[0]));
+        console.log('First VM sample:', {
+          id: data[0].id,
+          slug: data[0].slug,
+          name: data[0].name,
+          state: data[0].state,
+          has_offering: !!data[0].offering,
+          offering_keys: data[0].offering ? Object.keys(data[0].offering) : null,
+          offering_cpu: data[0].offering?.cpu,
+          offering_memory: data[0].offering?.memory,
+          offering_storage: data[0].offering?.storage,
+        });
       }
       
-      return Array.isArray(data) ? data.map(normalizeVM) : [];
+      let vms = Array.isArray(data) ? data.map(normalizeVM) : [];
+      
+      // Если нужно загрузить детали каждой ВМ (для получения полной конфигурации)
+      if (loadDetails && vms.length > 0) {
+        console.log('Loading details for', vms.length, 'VMs...');
+        const detailedVMs = await Promise.all(
+          vms.map(async (vm) => {
+            try {
+              const detail = await api.virtualMachines.get(vm.slug);
+              return detail;
+            } catch (error) {
+              console.error('Failed to load details for VM:', vm.slug, error);
+              return vm;
+            }
+          })
+        );
+        vms = detailedVMs;
+      }
+      
+      return vms;
     },
 
     get: async (slug: string): Promise<VirtualMachine> => {
@@ -217,7 +270,11 @@ export const api = {
       const data = response.data || response;
       
       // Логируем полную структуру для отладки
-      console.log('VM Detail API Response:', JSON.stringify(data, null, 2));
+      console.log('=== VM Detail API Response ===');
+      console.log('VM slug:', slug);
+      console.log('VM keys:', Object.keys(data));
+      console.log('VM offering:', data.offering);
+      console.log('VM state:', data.state);
       
       return normalizeVM(data);
     },

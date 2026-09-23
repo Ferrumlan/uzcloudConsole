@@ -20,7 +20,9 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
   const loadVMs = async () => {
     setLoading(true);
     try {
-      const data = await api.virtualMachines.list();
+      console.log('Loading VMs with full details...');
+      const data = await api.virtualMachines.list(undefined, true);
+      console.log('Loaded VMs:', data);
       setVms(data);
     } catch (err) {
       console.error('Failed to load VMs, using demo data:', err);
