@@ -14,31 +14,18 @@ interface VMCreateWizardProps {
 const volumeSizes = [20, 50, 100, 200, 500, 1000];
 
 export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose }) => {
-  // Загрузка сохраненного состояния из localStorage
-  const loadSavedState = () => {
-    try {
-      const saved = localStorage.getItem('vmCreateWizardState');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error('Failed to load wizard state:', e);
-    }
-    return null;
-  };
-
-  const savedState = loadSavedState();
-  
-  const [currentStep, setCurrentStep] = useState(savedState?.currentStep || 1);
-  const [formData, setFormData] = useState(savedState?.formData || {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState({
     location: '',
     project: '',
     newProjectName: '',
     image: '',
     instanceConfig: '',
-    volumeSize: 100,
+    volumeSize: 20,
     networkType: 'isolated',
     publicIp: false,
+    storageCategory: '',
+    billingCycle: '',
     name: '',
   });
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -50,6 +37,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const [projects, setProjects] = useState<Project[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [storageCategories, setStorageCategories] = useState<any[]>([]);
+  const [billingCycles, setBillingCycles] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -66,11 +55,13 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     
     try {
       // Параллельная загрузка всех данных
-      const [regionsData, projectsData, templatesData, plansData] = await Promise.all([
+      const [regionsData, projectsData, templatesData, plansData, storageCategoriesData, billingCyclesData] = await Promise.all([
         api.regions.list(),
         api.projects.list(),
         api.templates.list(),
         api.plans.listVMPlans(),
+        api.storageCategories.list(),
+        api.billingCycles.list(),
       ]);
 
       // Нормализуем планы - конвертируем строки в числа
@@ -84,13 +75,21 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       setProjects(projectsData);
       setTemplates(templatesData);
       setPlans(normalizedPlans);
+      setStorageCategories(storageCategoriesData);
+      setBillingCycles(billingCyclesData);
 
       // Установить первые значения по умолчанию
       if (!formData.location && regionsData.length > 0) {
-        setFormData((prev: typeof formData) => ({ ...prev, location: regionsData[0].slug }));
+        setFormData(prev => ({ ...prev, location: regionsData[0].slug }));
       }
       if (!formData.project && projectsData.length > 0) {
-        setFormData((prev: typeof formData) => ({ ...prev, project: projectsData[0].slug }));
+        setFormData(prev => ({ ...prev, project: projectsData[0].slug }));
+      }
+      if (!formData.storageCategory && storageCategoriesData.length > 0) {
+        setFormData(prev => ({ ...prev, storageCategory: storageCategoriesData[0].slug }));
+      }
+      if (!formData.billingCycle && billingCyclesData.length > 0) {
+        setFormData(prev => ({ ...prev, billingCycle: billingCyclesData[0].slug }));
       }
 
       console.log('API Data loaded:', {
@@ -107,27 +106,24 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     }
   };
 
-  // Сохранение состояния в localStorage при изменениях
-  useEffect(() => {
-    if (isOpen) {
-      try {
-        localStorage.setItem('vmCreateWizardState', JSON.stringify({
-          currentStep,
-          formData,
-        }));
-      } catch (e) {
-        console.error('Failed to save wizard state:', e);
-      }
-    }
-  }, [currentStep, formData, isOpen]);
-
   // Сброс состояния при закрытии
   const handleClose = () => {
-    try {
-      localStorage.removeItem('vmCreateWizardState');
-    } catch (e) {
-      console.error('Failed to clear wizard state:', e);
-    }
+    setCurrentStep(1);
+    setFormData({
+      location: '',
+      project: '',
+      newProjectName: '',
+      image: '',
+      instanceConfig: '',
+      volumeSize: 20,
+      networkType: 'isolated',
+      publicIp: false,
+      storageCategory: '',
+      billingCycle: '',
+      name: '',
+    });
+    setIsCreatingProject(false);
+    setCreateError(null);
     onClose();
   };
 
@@ -138,13 +134,14 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     { id: 2, label: 'Project', icon: LuFolder },
     { id: 3, label: 'Image', icon: LuImage },
     { id: 4, label: 'Instance', icon: LuCpu },
-    { id: 5, label: 'Volume', icon: LuHardDrive },
-    { id: 6, label: 'Network', icon: LuNetwork },
-    { id: 7, label: 'Name', icon: LuTag },
+    { id: 5, label: 'Storage', icon: LuHardDrive },
+    { id: 6, label: 'Billing', icon: LuTag },
+    { id: 7, label: 'Network', icon: LuNetwork },
+    { id: 8, label: 'Name', icon: LuTag },
   ];
 
   const handleNext = () => {
-    if (currentStep < 7) setCurrentStep(currentStep + 1);
+    if (currentStep < 8) setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
@@ -152,7 +149,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.image || !formData.instanceConfig || !formData.location || !formData.project) {
+    if (!formData.name || !formData.image || !formData.instanceConfig || !formData.location || !formData.project || !formData.storageCategory || !formData.billingCycle) {
       setCreateError('Заполните все обязательные поля');
       return;
     }
@@ -172,20 +169,16 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         plan: formData.instanceConfig, // slug из plans API
         disk_size: formData.volumeSize,
         public_ip: formData.publicIp,
+        storage_category: formData.storageCategory, // slug из storage categories API
+        billing_cycle: formData.billingCycle, // slug из billing cycles API
       };
 
       console.log('Creating VM with data:', vmData);
       
       await api.virtualMachines.create(vmData);
       
-      // Успешное создание - очищаем состояние
-      try {
-        localStorage.removeItem('vmCreateWizardState');
-      } catch (e) {
-        console.error('Failed to clear wizard state:', e);
-      }
-      
-      onClose();
+      // Успешное создание - закрываем wizard
+      handleClose();
       setCurrentStep(1);
       setFormData({
         location: '',
@@ -193,9 +186,11 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         newProjectName: '',
         image: '',
         instanceConfig: '',
-        volumeSize: 100,
+        volumeSize: 20,
         networkType: 'isolated',
         publicIp: false,
+        storageCategory: '',
+        billingCycle: '',
         name: '',
       });
       setIsCreatingProject(false);
@@ -599,51 +594,130 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
             </VStack>
           )}
 
-          {/* Step 5: Volume Configuration */}
+          {/* Step 5: Storage Configuration */}
           {currentStep === 5 && (
             <VStack gap="24px" align="stretch">
               <Text fontSize="14px" fontWeight="600" color="gray.700">
-                Конфигурация тома (Volume)
+                Тип хранилища
               </Text>
-              <VStack gap="16px" align="stretch">
-                <Text fontSize="14px" color="gray.600">
-                  Размер диска
-                </Text>
-                <Grid templateColumns="repeat(5, 1fr)" gap="12px">
-                  {volumeSizes.map((size) => (
-                    <GridItem key={size}>
-                      <Box
-                        p="16px"
-                        borderRadius="12px"
-                        borderWidth="2px"
-                        borderColor={formData.volumeSize === size ? '#0ea5e9' : 'gray.200'}
-                        bg={formData.volumeSize === size ? '#f0f9ff' : 'white'}
-                        cursor="pointer"
-                        onClick={() => setFormData({ ...formData, volumeSize: size })}
-                        transition="all 0.2s"
-                        textAlign="center"
-                        _hover={{
-                          borderColor: '#38bdf8',
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                        }}
-                      >
-                        <VStack gap="4px">
-                          <LuHardDrive size={24} color={formData.volumeSize === size ? '#0ea5e9' : '#64748b'} />
-                          <Text fontSize="18px" fontWeight="700" color={formData.volumeSize === size ? 'brand.600' : 'gray.900'}>
-                            {size} GB
-                          </Text>
-                        </VStack>
-                      </Box>
-                    </GridItem>
-                  ))}
-                </Grid>
-              </VStack>
+              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="16px">
+                {storageCategories.map((category) => (
+                  <GridItem key={category.slug}>
+                    <Box
+                      p="20px"
+                      borderRadius="12px"
+                      borderWidth="2px"
+                      borderColor={formData.storageCategory === category.slug ? '#0ea5e9' : 'gray.200'}
+                      bg={formData.storageCategory === category.slug ? '#f0f9ff' : 'white'}
+                      cursor="pointer"
+                      onClick={() => setFormData({ ...formData, storageCategory: category.slug })}
+                      transition="all 0.2s"
+                      _hover={{
+                        borderColor: '#38bdf8',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      }}
+                    >
+                      <VStack gap="12px" align="start">
+                        <HStack gap="12px">
+                          <Box
+                            p="12px"
+                            borderRadius="10px"
+                            bg={formData.storageCategory === category.slug ? 'brand.100' : 'gray.100'}
+                            color={formData.storageCategory === category.slug ? 'brand.600' : 'gray.600'}
+                          >
+                            <LuHardDrive size={24} />
+                          </Box>
+                          <VStack gap="4px" align="start">
+                            <Text fontSize="18px" fontWeight="700" color="gray.900">
+                              {category.name}
+                            </Text>
+                          </VStack>
+                        </HStack>
+                      </VStack>
+                    </Box>
+                  </GridItem>
+                ))}
+              </Grid>
+
+              <Text fontSize="14px" fontWeight="600" color="gray.700" mt="16px">
+                Размер диска
+              </Text>
+              <Grid templateColumns="repeat(5, 1fr)" gap="12px">
+                {volumeSizes.map((size) => (
+                  <GridItem key={size}>
+                    <Box
+                      p="16px"
+                      borderRadius="12px"
+                      borderWidth="2px"
+                      borderColor={formData.volumeSize === size ? '#0ea5e9' : 'gray.200'}
+                      bg={formData.volumeSize === size ? '#f0f9ff' : 'white'}
+                      cursor="pointer"
+                      onClick={() => setFormData({ ...formData, volumeSize: size })}
+                      transition="all 0.2s"
+                      textAlign="center"
+                      _hover={{
+                        borderColor: '#38bdf8',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      }}
+                    >
+                      <VStack gap="4px">
+                        <LuHardDrive size={24} color={formData.volumeSize === size ? '#0ea5e9' : '#64748b'} />
+                        <Text fontSize="18px" fontWeight="700" color={formData.volumeSize === size ? 'brand.600' : 'gray.900'}>
+                          {size} GB
+                        </Text>
+                      </VStack>
+                    </Box>
+                  </GridItem>
+                ))}
+              </Grid>
             </VStack>
           )}
 
-          {/* Step 6: Network */}
+          {/* Step 6: Billing Cycle */}
           {currentStep === 6 && (
+            <VStack gap="24px" align="stretch">
+              <Text fontSize="14px" fontWeight="600" color="gray.700">
+                Цикл оплаты
+              </Text>
+              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="16px">
+                {billingCycles.map((cycle) => (
+                  <GridItem key={cycle.slug}>
+                    <Box
+                      p="20px"
+                      borderRadius="12px"
+                      borderWidth="2px"
+                      borderColor={formData.billingCycle === cycle.slug ? '#0ea5e9' : 'gray.200'}
+                      bg={formData.billingCycle === cycle.slug ? '#f0f9ff' : 'white'}
+                      cursor="pointer"
+                      onClick={() => setFormData({ ...formData, billingCycle: cycle.slug })}
+                      transition="all 0.2s"
+                      _hover={{
+                        borderColor: '#38bdf8',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                      }}
+                    >
+                      <VStack gap="12px" align="start">
+                        <Text fontSize="18px" fontWeight="700" color="gray.900">
+                          {cycle.name}
+                        </Text>
+                        {cycle.description && (
+                          <Text fontSize="13px" color="gray.600">
+                            {cycle.description}
+                          </Text>
+                        )}
+                      </VStack>
+                    </Box>
+                  </GridItem>
+                ))}
+              </Grid>
+            </VStack>
+          )}
+
+          {/* Step 7: Network */}
+          {currentStep === 7 && (
             <VStack gap="24px" align="stretch">
               <Text fontSize="14px" fontWeight="600" color="gray.700">
                 Выберите тип сети
@@ -771,8 +845,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
             </VStack>
           )}
 
-          {/* Step 7: Name */}
-          {currentStep === 7 && (
+          {/* Step 8: Name */}
+          {currentStep === 8 && (
             <VStack gap="24px" align="stretch">
               <Text fontSize="14px" fontWeight="600" color="gray.700">
                 Имя виртуальной машины
@@ -816,8 +890,16 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                     </Text>
                   </HStack>
                   <HStack justify="space-between">
-                    <Text fontSize="14px" color="gray.600">Volume:</Text>
-                    <Text fontSize="14px" fontWeight="600">{formData.volumeSize} GB</Text>
+                    <Text fontSize="14px" color="gray.600">Storage:</Text>
+                    <Text fontSize="14px" fontWeight="600">
+                      {storageCategories.find(c => c.slug === formData.storageCategory)?.name || '—'} ({formData.volumeSize} GB)
+                    </Text>
+                  </HStack>
+                  <HStack justify="space-between">
+                    <Text fontSize="14px" color="gray.600">Billing:</Text>
+                    <Text fontSize="14px" fontWeight="600">
+                      {billingCycles.find(c => c.slug === formData.billingCycle)?.name || '—'}
+                    </Text>
                   </HStack>
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Network:</Text>
@@ -851,7 +933,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 <LuChevronLeft size={18} />
                 Назад
               </ModernButton>
-              {currentStep < 7 ? (
+              {currentStep < 8 ? (
                 <ModernButton variant="gradient" size="md" onClick={handleNext}>
                   Далее
                   <LuChevronRight size={18} />

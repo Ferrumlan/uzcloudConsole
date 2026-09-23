@@ -180,6 +180,22 @@ export const api = {
       return data;
     },
   },
+
+  // Storage Categories
+  storageCategories: {
+    list: async () => {
+      const response = await apiRequest<any>('/storage-categories');
+      return response.data?.data || response.data || [];
+    },
+  },
+
+  // Billing Cycles
+  billingCycles: {
+    list: async () => {
+      const response = await apiRequest<any>('/billing-cycles');
+      return response.data?.data || response.data || [];
+    },
+  },
   
   // Virtual Machines
   virtualMachines: {
