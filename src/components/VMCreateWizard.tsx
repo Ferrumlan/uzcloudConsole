@@ -64,11 +64,14 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         api.billingCycles.list(),
       ]);
 
-      // Нормализуем планы - конвертируем строки в числа
+      // Нормализуем планы - извлекаем CPU/RAM из attribute
       const normalizedPlans = plansData.map((plan: any) => ({
         ...plan,
-        cpu: parseInt(plan.cpu || '0', 10) || 0,
-        ram: parseInt(plan.ram || plan.memory || '0', 10) || 0,
+        cpu: plan.attribute?.cpu || plan.cpu || 0,
+        ram: plan.attribute?.memory 
+          ? Math.round(plan.attribute.memory / 1024)  // MB → GB
+          : (plan.memory ? Math.round(plan.memory / 1024) : 0),
+        price: plan.monthly_price || 0,
       }));
 
       setRegions(regionsData);
@@ -564,6 +567,11 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                           <Text fontSize="18px" fontWeight="700" color="gray.900">
                             {plan.name}
                           </Text>
+                          {plan.price && plan.price > 0 && (
+                            <Text fontSize="14px" fontWeight="600" color="brand.600">
+                              {plan.price.toLocaleString()} сўм/мес
+                            </Text>
+                          )}
                         </HStack>
                         <Separator borderColor="gray.200" />
                         <HStack gap="24px">

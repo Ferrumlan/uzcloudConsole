@@ -47,6 +47,13 @@ export interface Plan {
   cpu?: number | string;
   ram?: number | string;
   memory?: number | string;
+  price?: number;
+  monthly_price?: number;
+  attribute?: {
+    cpu?: number;
+    memory?: number;
+    storage?: number;
+  };
 }
 
 export interface User {
