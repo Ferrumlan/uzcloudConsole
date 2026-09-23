@@ -1,56 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator } from '@chakra-ui/react';
+import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator, Spinner } from '@chakra-ui/react';
 import { ModernButton } from './ModernButton';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../api/client';
-import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft, LuX } from 'react-icons/lu';
+import type { Project, Region, Template, Plan } from '../api/types';
+import { LuMapPin, LuFolder, LuImage, LuCpu, LuHardDrive, LuNetwork, LuTag, LuPlus, LuCheck, LuChevronRight, LuChevronLeft, LuX, LuCircleAlert } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const locations = [
-  { id: 'production', name: 'PRODUCTION', region: 'Tashkent-1' },
-  { id: 'staging', name: 'STAGING', region: 'Tashkent-1' },
-];
-
-const images = [
-  { id: 'ubuntu-2404-lts-1', name: 'Ubuntu 24.04 LTS', icon: '🐧', os: 'Linux' },
-  { id: 'ubuntu-2204-lts', name: 'Ubuntu 22.04 LTS', icon: '🐧', os: 'Linux' },
-  { id: 'centos-7-1', name: 'CentOS-7', icon: '🎩', os: 'Linux' },
-  { id: 'centos-9', name: 'CentOS-9', icon: '🎩', os: 'Linux' },
-  { id: 'centos-stream-10', name: 'CentOS Stream 10', icon: '🎩', os: 'Linux' },
-  { id: 'debian-13', name: 'Debian 13', icon: '🌀', os: 'Linux' },
-  { id: 'debian-12-2', name: 'Debian-12', icon: '🌀', os: 'Linux' },
-  { id: 'debian-11', name: 'Debian 11', icon: '🌀', os: 'Linux' },
-  { id: 'rocky-linux-97', name: 'Rocky Linux 9.7', icon: '🪨', os: 'Linux' },
-  { id: 'rocky-linux-8', name: 'Rocky Linux 8', icon: '🪨', os: 'Linux' },
-  { id: 'almalinux-9-1', name: 'AlmaLinux-9', icon: '🦬', os: 'Linux' },
-  { id: 'almalinux-8', name: 'AlmaLinux-8', icon: '🦬', os: 'Linux' },
-  { id: 'suse-16', name: 'SUSE-16', icon: '🦎', os: 'Linux' },
-  { id: 'windows-server-2025', name: 'Windows Server 2025', icon: '🪟', os: 'Windows' },
-  { id: 'windows-server-2022', name: 'Windows Server 2022', icon: '🪟', os: 'Windows' },
-  { id: 'windows-server-2019', name: 'Windows server 2019', icon: '🪟', os: 'Windows' },
-  { id: 'freepbx', name: 'FREEPBX', icon: '📞', os: 'Linux' },
-  { id: 'opnsense-2616', name: 'OPNsense-26.1.6', icon: '🔥', os: 'Linux' },
-  { id: 'issabel4', name: 'ISSABEL4', icon: '📞', os: 'Linux' },
-  { id: 'pfsense27', name: 'Pfsense.2.7', icon: '🔥', os: 'Linux' },
-];
-
-const instanceConfigs = [
-  { id: 'start-1', name: 'Start-1', cpu: 1, ram: 1, price: 0 },
-  { id: 'plan-2', name: 'Plan-2', cpu: 2, ram: 4, price: 0 },
-  { id: '2c-8g', name: '2C 8G', cpu: 2, ram: 8, price: 0 },
-  { id: 'gpu-1-1xnvidia-a40', name: 'GPU-1 (1xNvidia A40)', cpu: 8, ram: 32, price: 0 },
-  { id: 'gpu-2-2xnvidia-a40', name: 'GPU-2 (2xNvidia A40)', cpu: 16, ram: 64, price: 0 },
-];
-
 const volumeSizes = [50, 100, 200, 500, 1000];
 
 export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose }) => {
-  const { projects } = useApp();
-  
   // Загрузка сохраненного состояния из localStorage
   const loadSavedState = () => {
     try {
@@ -68,8 +31,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   
   const [currentStep, setCurrentStep] = useState(savedState?.currentStep || 1);
   const [formData, setFormData] = useState(savedState?.formData || {
-    location: 'production',
-    project: 'default',
+    location: '',
+    project: '',
     newProjectName: '',
     image: '',
     instanceConfig: '',
@@ -81,6 +44,61 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Данные из API
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Загрузка данных из API при открытии wizard
+  useEffect(() => {
+    if (isOpen) {
+      loadAPIData();
+    }
+  }, [isOpen]);
+
+  const loadAPIData = async () => {
+    setLoadingData(true);
+    setLoadError(null);
+    
+    try {
+      // Параллельная загрузка всех данных
+      const [regionsData, projectsData, templatesData, plansData] = await Promise.all([
+        api.regions.list(),
+        api.projects.list(),
+        api.templates.list(),
+        api.plans.listVMPlans(),
+      ]);
+
+      setRegions(regionsData);
+      setProjects(projectsData);
+      setTemplates(templatesData);
+      setPlans(plansData);
+
+      // Установить первые значения по умолчанию
+      if (!formData.location && regionsData.length > 0) {
+        setFormData((prev: typeof formData) => ({ ...prev, location: regionsData[0].slug }));
+      }
+      if (!formData.project && projectsData.length > 0) {
+        setFormData((prev: typeof formData) => ({ ...prev, project: projectsData[0].slug }));
+      }
+
+      console.log('API Data loaded:', {
+        regions: regionsData.length,
+        projects: projectsData.length,
+        templates: templatesData.length,
+        plans: plansData.length,
+      });
+    } catch (error) {
+      console.error('Failed to load API data:', error);
+      setLoadError(error instanceof Error ? error.message : 'Не удалось загрузить данные из API');
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   // Сохранение состояния в localStorage при изменениях
   useEffect(() => {
@@ -126,33 +144,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  // Реальные slug из API (получены через curl)
-  const CLOUD_PROVIDER_NIMBO = 'nimbo';
-  const REGION_STAGING = 'staging';
-  const REGION_PRODUCTION = 'production';
-  const PROJECT_DEFAULT = 'default-8';
-
-  // Templates и Plans теперь используют slug напрямую из API
-  // ID в images и instanceConfigs совпадают со slug'ами из API
-
-  // Маппинг regions (возвращаем slug)
-  const getRegionSlug = (locationId: string): string => {
-    const mapping: Record<string, string> = {
-      'production': REGION_PRODUCTION,
-      'staging': REGION_STAGING,
-    };
-    return mapping[locationId] || REGION_STAGING;
-  };
-
-  // Маппинг проектов (возвращаем slug)
-  const getProjectSlug = (projectSlug: string): string => {
-    return PROJECT_DEFAULT;
-  };
-
-  // Templates и Plans передаются как slug напрямую
-
   const handleCreate = async () => {
-    if (!formData.name || !formData.image || !formData.instanceConfig) {
+    if (!formData.name || !formData.image || !formData.instanceConfig || !formData.location || !formData.project) {
       setCreateError('Заполните все обязательные поля');
       return;
     }
@@ -161,14 +154,15 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     setCreateError(null);
 
     try {
+      // Используем реальные slug из API
       const vmData = {
         name: formData.name,
         hostname: formData.name.toLowerCase().replace(/\s+/g, '-'),
-        cloud_provider: CLOUD_PROVIDER_NIMBO,
-        region: getRegionSlug(formData.location),
-        project: getProjectSlug(formData.project),
-        template: formData.image,
-        plan: formData.instanceConfig,
+        cloud_provider: 'nimbo', // Cloud provider для VM
+        region: formData.location, // slug из regions API
+        project: formData.project, // slug из projects API
+        template: formData.image, // slug из templates API
+        plan: formData.instanceConfig, // slug из plans API
         disk_size: formData.volumeSize,
         public_ip: formData.publicIp,
       };
@@ -187,8 +181,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       onClose();
       setCurrentStep(1);
       setFormData({
-        location: 'production',
-        project: 'default',
+        location: '',
+        project: '',
         newProjectName: '',
         image: '',
         instanceConfig: '',
@@ -199,8 +193,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       });
       setIsCreatingProject(false);
       
-      // TODO: Обновить список ВМ на странице
-      window.location.reload(); // Временно перезагружаем страницу
+      // Обновить список ВМ на странице
+      window.location.reload();
     } catch (error) {
       console.error('Failed to create VM:', error);
       setCreateError(error instanceof Error ? error.message : 'Ошибка создания ВМ');
@@ -209,10 +203,96 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     }
   };
 
-  const selectedLocation = locations.find(l => l.id === formData.location);
-  const selectedImage = images.find(i => i.id === formData.image);
-  const selectedConfig = instanceConfigs.find(c => c.id === formData.instanceConfig);
-  const selectedProject = isCreatingProject ? formData.newProjectName : formData.project;
+  const selectedRegion = regions.find(r => r.slug === formData.location);
+  const selectedProject = projects.find(p => p.slug === formData.project);
+  const selectedTemplate = templates.find(t => t.slug === formData.image);
+  const selectedPlan = plans.find(p => p.slug === formData.instanceConfig);
+
+  // Экран загрузки данных
+  if (loadingData) {
+    return (
+      <Box
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.600"
+        zIndex={9999}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        onClick={onClose}
+      >
+        <Box
+          bg="white"
+          borderRadius="24px"
+          p="48px"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <VStack gap="24px">
+            <Spinner size="xl" color="brand.500" borderWidth="3px" />
+            <Text fontSize="18px" fontWeight="600" color="gray.700">
+              Загрузка данных из API...
+            </Text>
+          </VStack>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Экран ошибки загрузки
+  if (loadError) {
+    return (
+      <Box
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.600"
+        zIndex={9999}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        p="24px"
+        onClick={onClose}
+      >
+        <Box
+          bg="white"
+          borderRadius="24px"
+          p="48px"
+          maxW="500px"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <VStack gap="24px" align="center">
+            <Box
+              w="72px"
+              h="72px"
+              borderRadius="20px"
+              bg="red.50"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              color="red.500"
+            >
+              <LuCircleAlert size={40} />
+            </Box>
+            <VStack gap="12px">
+              <Text fontSize="24px" fontWeight="700" color="gray.900">
+                Ошибка загрузки
+              </Text>
+              <Text fontSize="16px" color="gray.600" textAlign="center">
+                {loadError}
+              </Text>
+            </VStack>
+            <HStack gap="12px">
+              <ModernButton variant="outline" size="md" onClick={handleClose}>
+                Закрыть
+              </ModernButton>
+              <ModernButton variant="gradient" size="md" onClick={loadAPIData}>
+                Попробовать снова
+              </ModernButton>
+            </HStack>
+          </VStack>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -296,17 +376,17 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
               <Text fontSize="14px" fontWeight="600" color="gray.700">
                 Выберите регион
               </Text>
-              <Grid templateColumns="repeat(2, 1fr)" gap="16px">
-                {locations.map((location) => (
-                  <GridItem key={location.id}>
+              <Grid templateColumns="repeat(auto-fill, minmax(250px, 1fr))" gap="16px">
+                {regions.map((region) => (
+                  <GridItem key={region.slug}>
                     <Box
                       p="20px"
                       borderRadius="12px"
                       borderWidth="2px"
-                      borderColor={formData.location === location.id ? '#0ea5e9' : 'gray.200'}
-                      bg={formData.location === location.id ? '#f0f9ff' : 'white'}
+                      borderColor={formData.location === region.slug ? '#0ea5e9' : 'gray.200'}
+                      bg={formData.location === region.slug ? '#f0f9ff' : 'white'}
                       cursor="pointer"
-                      onClick={() => setFormData({ ...formData, location: location.id })}
+                      onClick={() => setFormData({ ...formData, location: region.slug })}
                       transition="all 0.2s"
                       _hover={{
                         borderColor: '#38bdf8',
@@ -319,18 +399,20 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                           <Box
                             p="12px"
                             borderRadius="10px"
-                            bg={formData.location === location.id ? 'brand.100' : 'gray.100'}
-                            color={formData.location === location.id ? 'brand.600' : 'gray.600'}
+                            bg={formData.location === region.slug ? 'brand.100' : 'gray.100'}
+                            color={formData.location === region.slug ? 'brand.600' : 'gray.600'}
                           >
                             <LuMapPin size={24} />
                           </Box>
                           <VStack gap="4px" align="start">
                             <Text fontSize="18px" fontWeight="700" color="gray.900">
-                              {location.name}
+                              {region.name}
                             </Text>
-                            <Text fontSize="13px" color="gray.600">
-                              {location.region}
-                            </Text>
+                            {region.cloud_provider && (
+                              <Text fontSize="13px" color="gray.600">
+                                {region.cloud_provider.name}
+                              </Text>
+                            )}
                           </VStack>
                         </HStack>
                       </VStack>
@@ -360,42 +442,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
 
               {!isCreatingProject ? (
                 <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="12px">
-                  <GridItem>
-                    <Box
-                      p="16px"
-                      borderRadius="12px"
-                      borderWidth="2px"
-                      borderColor={formData.project === 'default' ? '#0ea5e9' : 'gray.200'}
-                      bg={formData.project === 'default' ? '#f0f9ff' : 'white'}
-                      cursor="pointer"
-                      onClick={() => setFormData({ ...formData, project: 'default' })}
-                      transition="all 0.2s"
-                      _hover={{
-                        borderColor: '#38bdf8',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                      }}
-                    >
-                      <HStack gap="12px">
-                        <Box
-                          p="8px"
-                          borderRadius="8px"
-                          bg={formData.project === 'default' ? 'brand.100' : 'gray.100'}
-                          color={formData.project === 'default' ? 'brand.600' : 'gray.600'}
-                        >
-                          <LuFolder size={20} />
-                        </Box>
-                        <VStack gap="2px" align="start" flex={1}>
-                          <Text fontSize="14px" fontWeight="600" color="gray.900">
-                            Default
-                          </Text>
-                          <Text fontSize="11px" color="gray.500">
-                            По умолчанию
-                          </Text>
-                        </VStack>
-                      </HStack>
-                    </Box>
-                  </GridItem>
                   {projects.map((project) => (
                     <GridItem key={project.slug}>
                       <Box
@@ -457,16 +503,16 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 Выберите образ операционной системы
               </Text>
               <Grid templateColumns="repeat(4, 1fr)" gap="12px">
-                {images.map((image) => (
-                  <GridItem key={image.id}>
+                {templates.map((template) => (
+                  <GridItem key={template.slug}>
                     <Box
                       p="16px"
                       borderRadius="12px"
                       borderWidth="2px"
-                      borderColor={formData.image === image.id ? '#0ea5e9' : 'gray.200'}
-                      bg={formData.image === image.id ? '#f0f9ff' : 'white'}
+                      borderColor={formData.image === template.slug ? '#0ea5e9' : 'gray.200'}
+                      bg={formData.image === template.slug ? '#f0f9ff' : 'white'}
                       cursor="pointer"
-                      onClick={() => setFormData({ ...formData, image: image.id })}
+                      onClick={() => setFormData({ ...formData, image: template.slug })}
                       transition="all 0.2s"
                       _hover={{
                         borderColor: '#38bdf8',
@@ -475,12 +521,9 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                       }}
                     >
                       <VStack gap="8px">
-                        <Text fontSize="32px">{image.icon}</Text>
+                        <Text fontSize="32px">🐧</Text>
                         <Text fontSize="13px" fontWeight="600" textAlign="center">
-                          {image.name}
-                        </Text>
-                        <Text fontSize="11px" color="gray.500">
-                          {image.os}
+                          {template.name}
                         </Text>
                       </VStack>
                     </Box>
@@ -497,16 +540,16 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 Конфигурация инстанса
               </Text>
               <Grid templateColumns="repeat(2, 1fr)" gap="16px">
-                {instanceConfigs.map((config) => (
-                  <GridItem key={config.id}>
+                {plans.map((plan) => (
+                  <GridItem key={plan.slug}>
                     <Box
                       p="20px"
                       borderRadius="12px"
                       borderWidth="2px"
-                      borderColor={formData.instanceConfig === config.id ? '#0ea5e9' : 'gray.200'}
-                      bg={formData.instanceConfig === config.id ? '#f0f9ff' : 'white'}
+                      borderColor={formData.instanceConfig === plan.slug ? '#0ea5e9' : 'gray.200'}
+                      bg={formData.instanceConfig === plan.slug ? '#f0f9ff' : 'white'}
                       cursor="pointer"
-                      onClick={() => setFormData({ ...formData, instanceConfig: config.id })}
+                      onClick={() => setFormData({ ...formData, instanceConfig: plan.slug })}
                       transition="all 0.2s"
                       _hover={{
                         borderColor: '#38bdf8',
@@ -517,10 +560,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                       <VStack gap="12px" align="stretch">
                         <HStack justify="space-between">
                           <Text fontSize="18px" fontWeight="700" color="gray.900">
-                            {config.name}
-                          </Text>
-                          <Text fontSize="14px" fontWeight="600" color="brand.600">
-                            {config.price.toLocaleString()} сўм/мес
+                            {plan.name}
                           </Text>
                         </HStack>
                         <Separator borderColor="gray.200" />
@@ -530,7 +570,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                             <VStack gap="0" align="start">
                               <Text fontSize="11px" color="gray.500">vCPU</Text>
                               <Text fontSize="16px" fontWeight="700" color="gray.900">
-                                {config.cpu}
+                                {plan.cpu || '?'}
                               </Text>
                             </VStack>
                           </HStack>
@@ -539,7 +579,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                             <VStack gap="0" align="start">
                               <Text fontSize="11px" color="gray.500">vRAM</Text>
                               <Text fontSize="16px" fontWeight="700" color="gray.900">
-                                {config.ram} GB
+                                {plan.ram || '?'} GB
                               </Text>
                             </VStack>
                           </HStack>
@@ -680,7 +720,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                         </VStack>
                       </HStack>
                       <Text fontSize="12px" color="gray.500">
-                        VPC в регионе {selectedLocation?.region} с гибкой настройкой
+                        VPC в регионе {selectedRegion?.name} с гибкой настройкой
                       </Text>
                     </VStack>
                   </Box>
@@ -752,20 +792,20 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                   </Text>
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Location:</Text>
-                    <Text fontSize="14px" fontWeight="600">{selectedLocation?.name}</Text>
+                    <Text fontSize="14px" fontWeight="600">{selectedRegion?.name || '—'}</Text>
                   </HStack>
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Project:</Text>
-                    <Text fontSize="14px" fontWeight="600">{selectedProject || '—'}</Text>
+                    <Text fontSize="14px" fontWeight="600">{selectedProject?.name || '—'}</Text>
                   </HStack>
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Image:</Text>
-                    <Text fontSize="14px" fontWeight="600">{selectedImage?.name || '—'}</Text>
+                    <Text fontSize="14px" fontWeight="600">{selectedTemplate?.name || '—'}</Text>
                   </HStack>
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Instance:</Text>
                     <Text fontSize="14px" fontWeight="600">
-                      {selectedConfig ? `${selectedConfig.cpu} vCPU / ${selectedConfig.ram} GB RAM` : '—'}
+                      {selectedPlan ? `${selectedPlan.cpu || '?'} vCPU / ${selectedPlan.ram || '?'} GB RAM` : '—'}
                     </Text>
                   </HStack>
                   <HStack justify="space-between">
@@ -778,17 +818,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                       {formData.networkType === 'isolated' ? 'Isolated' : 'VPC'} {formData.publicIp ? '+ Public IP' : ''}
                     </Text>
                   </HStack>
-                  {selectedConfig && (
-                    <>
-                      <Separator borderColor="gray.200" />
-                      <HStack justify="space-between">
-                        <Text fontSize="14px" color="gray.600">Стоимость:</Text>
-                        <Text fontSize="16px" fontWeight="700" color="brand.600">
-                          {selectedConfig.price.toLocaleString()} сўм/мес
-                        </Text>
-                      </HStack>
-                    </>
-                  )}
                 </VStack>
               </Box>
             </VStack>
