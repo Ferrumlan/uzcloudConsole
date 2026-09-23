@@ -286,11 +286,12 @@ export const api = {
       region: string;
       project: string;
       template?: string;
+      plan?: string;
       service_offering?: string;
       plan_id?: string;
       disk_size?: number;
       network_type?: string;
-      public_ip?: boolean;
+      public_ip?: boolean | any[];
       billing_cycle?: string;
       storage_category?: string;
       blockstorage_custom_plan?: {
@@ -299,7 +300,7 @@ export const api = {
       [key: string]: any;
     }): Promise<VirtualMachine> => {
       // Добавляем обязательные поля если их нет
-      const payload = {
+      const payload: any = {
         ...data,
         billing_cycle: data.billing_cycle || 'monthly',
         storage_category: data.storage_category || 'standard',
@@ -312,7 +313,12 @@ export const api = {
         };
       }
       
-      console.log('Creating VM with payload:', payload);
+      // Преобразуем public_ip в массив если это boolean
+      if (typeof data.public_ip === 'boolean') {
+        payload.public_ip = data.public_ip ? [{}] : [];
+      }
+      
+      console.log('Creating VM with payload:', JSON.stringify(payload, null, 2));
       
       const response = await apiRequest<any>('/virtual-machines', {
         method: 'POST',
