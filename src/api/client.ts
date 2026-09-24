@@ -13,7 +13,18 @@ function normalizeVM(apiVM: any): VirtualMachine {
   // Извлекаем CPU/RAM/Disk из offering (реальная структура API)
   const offering = apiVM.offering || {};
   
-  console.log('Offering data:', offering);
+  console.log('=== OFFERING STRUCTURE ===');
+  console.log('Full offering:', JSON.stringify(offering, null, 2));
+  console.log('offering.cpu:', offering.cpu);
+  console.log('offering.memory:', offering.memory);
+  console.log('offering.storage:', offering.storage);
+  console.log('offering.disk:', offering.disk);
+  console.log('offering.disk_size:', offering.disk_size);
+  console.log('apiVM.disk:', apiVM.disk);
+  console.log('apiVM.disk_size:', apiVM.disk_size);
+  console.log('apiVM.storage:', apiVM.storage);
+  console.log('apiVM.volume_size:', apiVM.volume_size);
+  console.log('apiVM.blockstorage:', apiVM.blockstorage);
   
   // CPU: строка "4" → число 4
   const cpu = parseInt(offering.cpu || apiVM.cpu || '0', 10) || 0;
@@ -23,7 +34,22 @@ function normalizeVM(apiVM: any): VirtualMachine {
   const ram = memoryMB > 100 ? Math.round(memoryMB / 1024) : memoryMB; // Если > 100, значит в MB
   
   // Storage: строка "50" (GB) → число 50
-  const disk = parseInt(offering.storage || apiVM.disk || apiVM.disk_size || '0', 10) || 0;
+  // Пробуем разные возможные поля
+  const disk = parseInt(
+    offering.storage || 
+    offering.disk || 
+    offering.disk_size || 
+    offering.volume_size ||
+    apiVM.disk || 
+    apiVM.disk_size || 
+    apiVM.storage ||
+    apiVM.volume_size ||
+    apiVM.blockstorage?.size ||
+    '0', 
+    10
+  ) || 0;
+  
+  console.log('Extracted disk value:', disk);
 
   console.log('Extracted config:', { cpu, ram, disk, memoryMB });
 
@@ -32,20 +58,36 @@ function normalizeVM(apiVM: any): VirtualMachine {
   let public_ip: string | null = null;
   
   console.log('Full API VM response:', apiVM);
+  console.log('offering field:', apiVM.offering);
   console.log('ipaddresses field:', apiVM.ipaddresses);
   console.log('public_ip field:', apiVM.public_ip);
   console.log('private_ip field:', apiVM.private_ip);
   
   if (apiVM.ipaddresses && Array.isArray(apiVM.ipaddresses) && apiVM.ipaddresses.length > 0) {
     console.log('IP addresses found:', apiVM.ipaddresses.length, apiVM.ipaddresses);
-    // Ищем публичный IP
-    const publicIP = apiVM.ipaddresses.find((ip: any) => ip.is_public || ip.ip_type === 'public');
-    if (publicIP) {
-      public_ip = publicIP.ipaddress || publicIP.ip_address || publicIP.ip || null;
+    
+    // Разделяем публичные и приватные IP
+    const publicIPs = apiVM.ipaddresses.filter((ip: any) => 
+      ip.is_public || ip.ip_type === 'Public IP' || ip.ip_type === 'public'
+    );
+    const privateIPs = apiVM.ipaddresses.filter((ip: any) => 
+      !ip.is_public && ip.ip_type !== 'Public IP' && ip.ip_type !== 'public'
+    );
+    
+    console.log('Public IPs:', publicIPs);
+    console.log('Private IPs:', privateIPs);
+    
+    // Берём первый публичный IP
+    if (publicIPs.length > 0) {
+      public_ip = publicIPs[0].ipaddress || publicIPs[0].ip_address || publicIPs[0].ip || null;
+    }
+    
+    // Берём первый приватный IP
+    if (privateIPs.length > 0) {
+      ip_address = privateIPs[0].ipaddress || privateIPs[0].ip_address || privateIPs[0].ip || null;
+    } else if (publicIPs.length > 0) {
+      // Если приватных нет, используем публичный
       ip_address = public_ip;
-    } else {
-      // Если нет публичного, берём первый приватный
-      ip_address = apiVM.ipaddresses[0]?.ipaddress || apiVM.ipaddresses[0]?.ip_address || apiVM.ipaddresses[0]?.ip || null;
     }
   }
   
@@ -347,9 +389,16 @@ export const api = {
         };
       }
       
-      // Преобразуем public_ip в массив если это boolean
+      // Преобразуем public_ip для API
       if (typeof data.public_ip === 'boolean') {
-        payload.public_ip = data.public_ip ? [{}] : [];
+        // API ожидает массив объектов с флагом is_public
+        payload.public_ip = data.public_ip ? [{ is_public: true }] : [];
+      } else if (Array.isArray(data.public_ip)) {
+        // Если уже массив, добавляем is_public к каждому элементу
+        payload.public_ip = data.public_ip.map((ip: any) => ({
+          ...ip,
+          is_public: true
+        }));
       }
       
       console.log('Creating VM with payload:', JSON.stringify(payload, null, 2));
