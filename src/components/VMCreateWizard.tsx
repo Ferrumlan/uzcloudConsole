@@ -22,7 +22,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     image: '',
     instanceConfig: '',
     volumeSize: 20,
-    networkType: 'isolated',
+    networkType: 'Isolated',
     publicIp: false,
     storageCategory: '',
     billingCycle: '',
@@ -119,7 +119,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       image: '',
       instanceConfig: '',
       volumeSize: 20,
-      networkType: 'isolated',
+      networkType: 'Isolated',
       publicIp: false,
       storageCategory: '',
       billingCycle: '',
@@ -737,10 +737,10 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                     p="20px"
                     borderRadius="12px"
                     borderWidth="2px"
-                    borderColor={formData.networkType === 'isolated' ? '#0ea5e9' : 'gray.200'}
-                    bg={formData.networkType === 'isolated' ? '#f0f9ff' : 'white'}
+                    borderColor={formData.networkType === 'Isolated' ? '#0ea5e9' : 'gray.200'}
+                    bg={formData.networkType === 'Isolated' ? '#f0f9ff' : 'white'}
                     cursor="pointer"
-                    onClick={() => setFormData({ ...formData, networkType: 'isolated' })}
+                    onClick={() => setFormData({ ...formData, networkType: 'Isolated' })}
                     transition="all 0.2s"
                     _hover={{
                       borderColor: '#38bdf8',
@@ -753,8 +753,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                         <Box
                           p="12px"
                           borderRadius="10px"
-                          bg={formData.networkType === 'isolated' ? 'brand.100' : 'gray.100'}
-                          color={formData.networkType === 'isolated' ? 'brand.600' : 'gray.600'}
+                          bg={formData.networkType === 'Isolated' ? 'brand.100' : 'gray.100'}
+                          color={formData.networkType === 'Isolated' ? 'brand.600' : 'gray.600'}
                         >
                           <LuNetwork size={24} />
                         </Box>
@@ -779,10 +779,10 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                     p="20px"
                     borderRadius="12px"
                     borderWidth="2px"
-                    borderColor={formData.networkType === 'vpc' ? '#0ea5e9' : 'gray.200'}
-                    bg={formData.networkType === 'vpc' ? '#f0f9ff' : 'white'}
+                    borderColor={formData.networkType === 'VPC' ? '#0ea5e9' : 'gray.200'}
+                    bg={formData.networkType === 'VPC' ? '#f0f9ff' : 'white'}
                     cursor="pointer"
-                    onClick={() => setFormData({ ...formData, networkType: 'vpc' })}
+                    onClick={() => setFormData({ ...formData, networkType: 'VPC' })}
                     transition="all 0.2s"
                     _hover={{
                       borderColor: '#38bdf8',
@@ -795,8 +795,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                         <Box
                           p="12px"
                           borderRadius="10px"
-                          bg={formData.networkType === 'vpc' ? 'brand.100' : 'gray.100'}
-                          color={formData.networkType === 'vpc' ? 'brand.600' : 'gray.600'}
+                          bg={formData.networkType === 'VPC' ? 'brand.100' : 'gray.100'}
+                          color={formData.networkType === 'VPC' ? 'brand.600' : 'gray.600'}
                         >
                           <LuNetwork size={24} />
                         </Box>
@@ -821,11 +821,16 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 p="16px" 
                 borderRadius="12px" 
                 border="2px solid" 
-                borderColor={formData.publicIp ? "brand.200" : "gray.200"}
+                borderColor={formData.publicIp ? "brand.500" : "gray.200"}
                 bg={formData.publicIp ? "brand.50" : "white"}
                 cursor="pointer"
                 onClick={() => setFormData({ ...formData, publicIp: !formData.publicIp })}
                 transition="all 0.2s"
+                _hover={{
+                  borderColor: formData.publicIp ? "brand.600" : "gray.300",
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                }}
               >
                 <HStack justify="space-between">
                   <VStack gap="4px" align="start">
@@ -837,17 +842,18 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                     </Text>
                   </VStack>
                   <Box
-                    w="24px"
-                    h="24px"
-                    borderRadius="6px"
+                    w="28px"
+                    h="28px"
+                    borderRadius="8px"
                     border="2px solid"
                     borderColor={formData.publicIp ? "brand.500" : "gray.300"}
                     bg={formData.publicIp ? "brand.500" : "white"}
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
+                    transition="all 0.2s"
                   >
-                    {formData.publicIp && <LuCheck size={16} color="white" />}
+                    {formData.publicIp && <LuCheck size={18} color="white" strokeWidth={3} />}
                   </Box>
                 </HStack>
               </Box>
@@ -913,7 +919,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Network:</Text>
                     <Text fontSize="14px" fontWeight="600">
-                      {formData.networkType === 'isolated' ? 'Isolated' : 'VPC'} {formData.publicIp ? '+ Public IP' : ''}
+                      {formData.networkType} {formData.publicIp ? '+ Public IP' : ''}
                     </Text>
                   </HStack>
                 </VStack>
