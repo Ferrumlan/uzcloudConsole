@@ -24,12 +24,12 @@ export const ModernCard: React.FC<ModernCardProps> = ({
 
   return (
     <Box
-      bg="white"
-      borderRadius="20px"
+      bg="var(--card-bg)"
+      borderRadius="16px"
       padding={padding}
       boxShadow={hover && isHovered ? '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' : '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'}
       border="1px solid"
-      borderColor="gray.100"
+      borderColor="var(--card-border)"
       transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       cursor={onClick ? 'pointer' : 'default'}
       transform={hover && isHovered ? 'translateY(-4px)' : 'none'}
@@ -44,20 +44,20 @@ export const ModernCard: React.FC<ModernCardProps> = ({
               <Box
                 p="12px"
                 borderRadius="12px"
-                bg="linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)"
-                color="brand.600"
+                bg="linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)"
+                color="#2563eb"
               >
                 {icon}
               </Box>
             )}
-            <VStack align="stretch" gap="4px" flex="1">
+            <VStack align="stretch" gap="4px" flex={1}>
               {title && (
-                <Heading size="xl" color="gray.900" fontWeight="700">
+                <Heading size="lg" color="var(--text-primary)" fontWeight="700">
                   {title}
                 </Heading>
               )}
               {subtitle && (
-                <Text fontSize="14px" color="gray.500" fontWeight="500">
+                <Text fontSize="14px" color="var(--text-secondary)" fontWeight="500">
                   {subtitle}
                 </Text>
               )}

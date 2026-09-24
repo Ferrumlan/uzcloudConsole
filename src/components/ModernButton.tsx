@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HStack, Text } from '@chakra-ui/react';
+import { Box, HStack, Text } from '@chakra-ui/react';
 
 interface ModernButtonProps {
   children: React.ReactNode;
@@ -37,7 +37,7 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
       padding: sizeStyles[size].padding,
       fontSize: sizeStyles[size].fontSize,
       fontWeight: 600,
-      borderRadius: '12px',
+      borderRadius: '10px',
       cursor: disabled || loading ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.5 : 1,
       transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -58,27 +58,27 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
         return {
           ...baseStyles,
           background: isHovered && !disabled && !loading
-            ? 'linear-gradient(135deg, #0284c7 0%, #9333ea 100%)'
-            : 'linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%)',
+            ? 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)'
+            : 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
           color: 'white',
           boxShadow: isHovered && !disabled && !loading
-            ? '0 8px 24px rgba(14, 165, 233, 0.45)'
-            : '0 4px 14px rgba(14, 165, 233, 0.35)',
+            ? '0 8px 24px rgba(59, 130, 246, 0.45)'
+            : '0 4px 14px rgba(59, 130, 246, 0.35)',
         };
       case 'outline':
         return {
           ...baseStyles,
-          background: isHovered && !disabled && !loading ? '#f0f9ff' : 'transparent',
-          color: '#0284c7',
+          background: isHovered && !disabled && !loading ? 'var(--bg-secondary)' : 'transparent',
+          color: '#3b82f6',
           border: '2px solid',
-          borderColor: isHovered && !disabled && !loading ? '#38bdf8' : '#bae6fd',
-          boxShadow: isHovered && !disabled && !loading ? '0 4px 12px rgba(14, 165, 233, 0.15)' : 'none',
+          borderColor: isHovered && !disabled && !loading ? '#3b82f6' : '#bfdbfe',
+          boxShadow: isHovered && !disabled && !loading ? '0 4px 12px rgba(59, 130, 246, 0.15)' : 'none',
         };
       case 'ghost':
         return {
           ...baseStyles,
-          background: isHovered && !disabled && !loading ? '#f3f4f6' : 'transparent',
-          color: isHovered && !disabled && !loading ? '#111827' : '#374151',
+          background: isHovered && !disabled && !loading ? 'var(--bg-secondary)' : 'transparent',
+          color: isHovered && !disabled && !loading ? 'var(--text-primary)' : 'var(--text-secondary)',
         };
       case 'danger':
         return {
@@ -95,12 +95,12 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
         return {
           ...baseStyles,
           background: isHovered && !disabled && !loading
-            ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)'
-            : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+            : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           color: 'white',
           boxShadow: isHovered && !disabled && !loading
-            ? '0 8px 24px rgba(34, 197, 94, 0.45)'
-            : '0 4px 14px rgba(34, 197, 94, 0.35)',
+            ? '0 8px 24px rgba(16, 185, 129, 0.45)'
+            : '0 4px 14px rgba(16, 185, 129, 0.35)',
         };
       default:
         return baseStyles;
@@ -129,7 +129,7 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
               animation: 'spin 0.8s linear infinite',
             }}
           />
-          <Text>Загрузка...</Text>
+          <Text>Loading...</Text>
         </HStack>
       ) : (
         <HStack gap="8px">

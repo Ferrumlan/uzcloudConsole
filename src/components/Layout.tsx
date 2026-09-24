@@ -1,93 +1,139 @@
-import React from 'react';
-import { Box, Flex, VStack, HStack, Text, Badge, Separator } from '@chakra-ui/react';
-import { useApp } from '../contexts/AppContext';
-import { ModernButton } from './ModernButton';
+import React, { useState } from 'react';
+import { Box, Flex, VStack, HStack, Text, Input, Badge, Avatar, Button } from '@chakra-ui/react';
 import { 
-  LuLayoutDashboard, LuServer, LuCreditCard, LuLogOut, 
-  LuGlobe, LuCloud
+  LuLayoutDashboard, LuServer, LuContainer, LuImage, LuHardDrive, LuCamera,
+  LuNetwork, LuGlobe, LuShield, LuKey, LuDatabase, LuActivity, LuShoppingBag,
+  LuCreditCard, LuLifeBuoy, LuSettings, LuSearch, LuBell, LuPlus, LuMoon, LuSun,
+  LuChevronDown, LuMenu
 } from 'react-icons/lu';
+import { useApp } from '../contexts/AppContext';
 
-type Page = 'dashboard' | 'vms' | 'billing';
+export type Page = 'dashboard' | 'vms' | 'kubernetes' | 'images' | 'volumes' | 'snapshots' | 
+            'networks' | 'floating-ips' | 'firewalls' | 'ssh-keys' | 'object-storage' |
+            'load-balancers' | 'dns' | 'monitoring' | 'marketplace' | 'billing' | 
+            'support' | 'settings';
 
-const navItems: Array<{ id: Page; icon: any; label: string; badge?: string }> = [
-  { id: 'dashboard', icon: LuLayoutDashboard, label: 'Обзор' },
-  { id: 'vms', icon: LuServer, label: 'Виртуальные машины' },
-  { id: 'billing', icon: LuCreditCard, label: 'Финансы' },
+interface NavItem {
+  id: Page;
+  icon: any;
+  label: string;
+  labelUz?: string;
+  badge?: string;
+}
+
+const navItems: NavItem[] = [
+  { id: 'dashboard', icon: LuLayoutDashboard, label: 'Dashboard', labelUz: 'Boshqaruv paneli' },
+  { id: 'vms', icon: LuServer, label: 'Virtual Machines', labelUz: 'Virtual mashinalar' },
+  { id: 'kubernetes', icon: LuContainer, label: 'Kubernetes', badge: 'Скоро' },
+  { id: 'images', icon: LuImage, label: 'Images', labelUz: 'Rasmlar' },
+  { id: 'volumes', icon: LuHardDrive, label: 'Volumes', labelUz: 'Hajmlar' },
+  { id: 'snapshots', icon: LuCamera, label: 'Snapshots', labelUz: 'Snapshotlar' },
+  { id: 'networks', icon: LuNetwork, label: 'Networks', labelUz: 'Tarmoqlar' },
+  { id: 'floating-ips', icon: LuGlobe, label: 'Floating IPs', labelUz: 'Suzuvchi IP' },
+  { id: 'firewalls', icon: LuShield, label: 'Firewalls', labelUz: 'Xavfsizlik devorlari' },
+  { id: 'ssh-keys', icon: LuKey, label: 'SSH Keys', labelUz: 'SSH kalitlari' },
+  { id: 'object-storage', icon: LuDatabase, label: 'Object Storage', labelUz: 'Ob\'ektli saqlash' },
+  { id: 'load-balancers', icon: LuActivity, label: 'Load Balancers', labelUz: 'Yuk balanseri' },
+  { id: 'dns', icon: LuGlobe, label: 'DNS', labelUz: 'DNS' },
+  { id: 'monitoring', icon: LuActivity, label: 'Monitoring', labelUz: 'Monitoring' },
+  { id: 'marketplace', icon: LuShoppingBag, label: 'Marketplace', labelUz: 'Bozor' },
+  { id: 'billing', icon: LuCreditCard, label: 'Billing', labelUz: 'To\'lovlar' },
+  { id: 'support', icon: LuLifeBuoy, label: 'Support', labelUz: 'Qo\'llab-quvvatlash' },
+  { id: 'settings', icon: LuSettings, label: 'Settings', labelUz: 'Sozlamalar' },
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout, language, setLanguage, currentPage, setCurrentPage } = useApp();
+  const { user, language, setLanguage, currentPage, setCurrentPage } = useApp();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'light' : 'dark');
+  };
+
+  const userName = user?.first_name || user?.email?.split('@')[0] || 'User';
 
   return (
-    <Flex minH="100vh" bg="#f8fafc">
+    <Flex minH="100vh" bg="var(--bg-secondary)">
       {/* Sidebar */}
       <Box
-        w="280px"
-        bg="white"
+        w="260px"
+        bg="var(--card-bg)"
         borderRight="1px solid"
-        borderRightColor="gray.200"
+        borderRightColor="var(--border-color)"
         display="flex"
         flexDirection="column"
         position="fixed"
         h="100vh"
         overflowY="auto"
+        zIndex={100}
       >
         {/* Logo */}
-        <Box p="24px" borderBottom="1px solid" borderBottomColor="gray.100">
+        <Box p="20px" borderBottom="1px solid" borderBottomColor="var(--border-color)">
           <HStack gap="12px">
             <Box
-              w="40px"
-              h="40px"
-              borderRadius="12px"
-              bgGradient="linear(to-br, #0ea5e9, #a855f7)"
+              w="36px"
+              h="36px"
+              borderRadius="10px"
+              bg="linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)"
               display="flex"
               alignItems="center"
               justifyContent="center"
               color="white"
-              fontSize="20px"
+              fontSize="18px"
+              fontWeight="700"
             >
-              <LuCloud />
+              ☁️
             </Box>
             <VStack gap="0" align="start">
-              <Text fontSize="18px" fontWeight="700" letterSpacing="-0.02em">
+              <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
                 UzCloud
               </Text>
-              <Text fontSize="12px" color="gray.500" fontWeight="500">
-                Console
+              <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="500">
+                Cloud Platform
               </Text>
             </VStack>
           </HStack>
         </Box>
 
         {/* Navigation */}
-        <VStack gap="4px" p="16px" flex={1} align="stretch">
+        <VStack gap="2px" p="12px" flex={1} align="stretch">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
-            const isBlocked = item.badge === 'скоро';
+            const label = language === 'uz' ? item.labelUz || item.label : item.label;
             
             return (
               <Box
                 key={item.id}
-                p="12px"
-                borderRadius="12px"
-                bg={isActive ? 'brand.50' : 'transparent'}
-                color={isActive ? 'brand.700' : 'gray.700'}
-                cursor={isBlocked ? 'not-allowed' : 'pointer'}
-                opacity={isBlocked ? 0.5 : 1}
-                onClick={() => !isBlocked && setCurrentPage(item.id)}
+                p="10px 12px"
+                borderRadius="8px"
+                bg={isActive ? 'var(--bg-tertiary)' : 'transparent'}
+                color={isActive ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                cursor="pointer"
+                onClick={() => setCurrentPage(item.id)}
+                transition="all 0.15s"
                 _hover={{
-                  bg: isActive ? 'brand.100' : 'gray.50',
+                  bg: isActive ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
                 }}
-                transition="all 0.2s"
               >
-                <HStack gap="12px">
-                  <Icon size={20} />
+                <HStack gap="10px">
+                  <Icon size={18} />
                   <Text fontSize="14px" fontWeight={isActive ? '600' : '500'} flex={1}>
-                    {item.label}
+                    {label}
                   </Text>
                   {item.badge && (
-                    <Badge size="sm" colorPalette="orange" variant="subtle" borderRadius="6px">
+                    <Badge 
+                      size="sm" 
+                      colorPalette="orange" 
+                      variant="subtle"
+                      borderRadius="6px"
+                      px="6px"
+                      py="2px"
+                      fontSize="10px"
+                    >
                       {item.badge}
                     </Badge>
                   )}
@@ -96,91 +142,161 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             );
           })}
         </VStack>
-
-        {/* Footer */}
-        <Box p="16px" borderTop="1px solid" borderTopColor="gray.100">
-          <VStack gap="16px" align="stretch">
-            {/* Language Selector */}
-            <HStack justify="space-between">
-              <HStack gap="8px" color="gray.500">
-                <LuGlobe size={16} />
-                <Text fontSize="12px" fontWeight="500">Язык</Text>
-              </HStack>
-              <HStack gap="4px">
-                {(['ru', 'uz', 'en'] as const).map((lang) => (
-                  <Box
-                    key={lang}
-                    px="8px"
-                    py="4px"
-                    borderRadius="6px"
-                    bg={language === lang ? 'brand.500' : 'transparent'}
-                    color={language === lang ? 'white' : 'gray.600'}
-                    fontSize="12px"
-                    fontWeight="600"
-                    cursor="pointer"
-                    onClick={() => setLanguage(lang)}
-                    _hover={{ bg: language === lang ? 'brand.600' : 'gray.100' }}
-                    transition="all 0.2s"
-                  >
-                    {lang.toUpperCase()}
-                  </Box>
-                ))}
-              </HStack>
-            </HStack>
-
-            <Separator />
-
-            {/* User Info */}
-            <HStack justify="space-between">
-              <VStack gap="0" align="start">
-                <Text fontSize="14px" fontWeight="600">
-                  {user?.email || 'Загрузка...'}
-                </Text>
-                <Text fontSize="12px" color="gray.500">
-                  Production
-                </Text>
-              </VStack>
-              <ModernButton variant="ghost" size="sm" onClick={logout}>
-                <LuLogOut size={16} />
-              </ModernButton>
-            </HStack>
-          </VStack>
-        </Box>
       </Box>
 
       {/* Main Content */}
-      <Box flex={1} ml="280px">
+      <Box flex={1} ml="260px">
         {/* Top Bar */}
         <Box
-          bg="white"
+          bg="var(--card-bg)"
           borderBottom="1px solid"
-          borderBottomColor="gray.200"
-          px="32px"
-          py="16px"
+          borderBottomColor="var(--border-color)"
+          px="24px"
+          py="12px"
           position="sticky"
           top={0}
-          zIndex={10}
+          zIndex={50}
         >
           <HStack justify="space-between">
-            <HStack gap="8px">
-              <Text fontSize="14px" color="gray.500" fontWeight="500">
-                Production
-              </Text>
-              <Text fontSize="14px" color="gray.300">/</Text>
-              <Text fontSize="14px" fontWeight="600" color="gray.900">
-                {navItems.find(item => item.id === currentPage)?.label || 'Обзор'}
-              </Text>
-            </HStack>
+            {/* Search */}
+            <Box flex={1} maxW="500px">
+              <HStack 
+                gap="8px"
+                bg="var(--bg-secondary)"
+                borderRadius="8px"
+                px="12px"
+                py="8px"
+                border="1px solid"
+                borderColor="var(--border-color)"
+              >
+                <LuSearch size={16} color="var(--text-tertiary)" />
+                <Input
+                  placeholder="Search resources..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  fontSize="14px"
+                  border="none"
+                  bg="transparent"
+                  _placeholder={{ color: 'var(--text-tertiary)' }}
+                  _focus={{ boxShadow: 'none', border: 'none' }}
+                />
+                <Text fontSize="12px" color="var(--text-tertiary)" fontWeight="500">
+                  ⌘K
+                </Text>
+              </HStack>
+            </Box>
+
+            {/* Right Actions */}
             <HStack gap="12px">
-              <Badge colorPalette="success" variant="subtle" borderRadius="8px" px="12px" py="6px" fontSize="12px" fontWeight="600">
-                API: nimbo
-              </Badge>
+              {/* Quick Create */}
+              <Button
+                size="sm"
+                bg="linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)"
+                color="white"
+                borderRadius="8px"
+                px="16px"
+                fontWeight="600"
+                _hover={{
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                }}
+              >
+                <LuPlus size={16} />
+                <Text fontSize="14px">Create</Text>
+              </Button>
+
+              {/* Theme Toggle */}
+              <Box
+                p="8px"
+                borderRadius="8px"
+                bg="var(--bg-secondary)"
+                cursor="pointer"
+                onClick={toggleTheme}
+                _hover={{ bg: 'var(--bg-tertiary)' }}
+              >
+                {isDarkMode ? <LuSun size={18} color="var(--text-secondary)" /> : <LuMoon size={18} color="var(--text-secondary)" />}
+              </Box>
+
+              {/* Notifications */}
+              <Box
+                p="8px"
+                borderRadius="8px"
+                bg="var(--bg-secondary)"
+                cursor="pointer"
+                position="relative"
+                onClick={() => setShowNotifications(!showNotifications)}
+                _hover={{ bg: 'var(--bg-tertiary)' }}
+              >
+                <LuBell size={18} color="var(--text-secondary)" />
+                <Box
+                  position="absolute"
+                  top="4px"
+                  right="4px"
+                  w="8px"
+                  h="8px"
+                  borderRadius="full"
+                  bg="red.500"
+                />
+              </Box>
+
+              {/* Language Switcher */}
+              <HStack 
+                gap="4px"
+                p="6px 10px"
+                borderRadius="8px"
+                bg="var(--bg-secondary)"
+                cursor="pointer"
+                _hover={{ bg: 'var(--bg-tertiary)' }}
+              >
+                <Text fontSize="13px" fontWeight="600" color="var(--text-secondary)">
+                  {language.toUpperCase()}
+                </Text>
+                <LuChevronDown size={14} color="var(--text-tertiary)" />
+              </HStack>
+
+              {/* Balance */}
+              <Box
+                p="8px 12px"
+                borderRadius="8px"
+                bg="var(--bg-secondary)"
+              >
+                <VStack gap="0" align="end">
+                  <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="500">
+                    Balance
+                  </Text>
+                  <Text fontSize="14px" fontWeight="700" color="var(--text-primary)">
+                    $1,245.00
+                  </Text>
+                </VStack>
+              </Box>
+
+              {/* User Profile */}
+              <HStack 
+                gap="8px"
+                p="6px 10px"
+                borderRadius="8px"
+                bg="var(--bg-secondary)"
+                cursor="pointer"
+                _hover={{ bg: 'var(--bg-tertiary)' }}
+              >
+                <Avatar.Root size="sm">
+                  <Avatar.Fallback name={userName} />
+                </Avatar.Root>
+                <VStack gap="0" align="start">
+                  <Text fontSize="13px" fontWeight="600" color="var(--text-primary)">
+                    {userName}
+                  </Text>
+                  <Text fontSize="11px" color="var(--text-tertiary)">
+                    Production
+                  </Text>
+                </VStack>
+              </HStack>
             </HStack>
           </HStack>
         </Box>
 
         {/* Page Content */}
-        <Box p="32px">
+        <Box p="24px">
           {children}
         </Box>
       </Box>
