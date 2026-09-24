@@ -132,7 +132,7 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
             <GridItem key={vm.id}>
               <ModernCard hover onClick={() => onSelectVM(vm)}>
                 <VStack gap="16px" align="stretch">
-                  {/* Header with Actions */}
+                  {/* Header */}
                   <HStack justify="space-between" align="start">
                     <HStack gap="12px" flex={1}>
                       <Box
@@ -152,118 +152,17 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
                         </Text>
                       </VStack>
                     </HStack>
-                    
-                    {/* Actions in top right */}
-                    <HStack gap="4px">
-                      {vm.status === 'stopped' && (
-                        <IconButton
-                          title="Start"
-                          aria-label="Start"
-                          size="sm"
-                          colorPalette="success"
-                          variant="ghost"
-                          borderRadius="8px"
-                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleVMAction('start', vm.slug); }}
-                          _hover={{ bg: 'success.50' }}
-                        >
-                          <LuPlay size={16} />
-                        </IconButton>
-                      )}
-                      {vm.status === 'running' && (
-                        <>
-                          <IconButton
-                            title="Stop"
-                            aria-label="Stop"
-                            size="sm"
-                            colorPalette="danger"
-                            variant="ghost"
-                            borderRadius="8px"
-                            onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleVMAction('stop', vm.slug); }}
-                            _hover={{ bg: 'danger.50' }}
-                          >
-                            <LuSquare size={16} />
-                          </IconButton>
-                          <IconButton
-                            title="Restart"
-                            aria-label="Restart"
-                            size="sm"
-                            colorPalette="warning"
-                            variant="ghost"
-                            borderRadius="8px"
-                            onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleVMAction('reboot', vm.slug); }}
-                            _hover={{ bg: 'warning.50' }}
-                          >
-                            <LuRotateCw size={16} />
-                          </IconButton>
-                        </>
-                      )}
-                      <IconButton
-                        title="Console"
-                        aria-label="Console"
-                        size="sm"
-                        variant="ghost"
-                        borderRadius="8px"
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        _hover={{ bg: 'var(--bg-tertiary)' }}
-                      >
-                        <LuTerminal size={16} />
-                      </IconButton>
-                      <Menu.Root>
-                        <Menu.Trigger asChild>
-                          <IconButton
-                            title="More actions"
-                            aria-label="More actions"
-                            size="sm"
-                            variant="ghost"
-                            borderRadius="8px"
-                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                            _hover={{ bg: 'var(--bg-tertiary)' }}
-                          >
-                            <LuEllipsisVertical size={16} />
-                          </IconButton>
-                        </Menu.Trigger>
-                        <Menu.Positioner>
-                          <Menu.Content>
-                            <Menu.Item value="resize" onClick={(e: any) => e.stopPropagation()}>
-                              <HStack gap="8px">
-                                <LuMaximize2 size={16} />
-                                <Text>Resize</Text>
-                              </HStack>
-                            </Menu.Item>
-                            <Menu.Item value="snapshot" onClick={(e: any) => e.stopPropagation()}>
-                              <HStack gap="8px">
-                                <LuCamera size={16} />
-                                <Text>Snapshot</Text>
-                              </HStack>
-                            </Menu.Item>
-                            <Menu.Item value="backup" onClick={(e: any) => e.stopPropagation()}>
-                              <HStack gap="8px">
-                                <LuArchive size={16} />
-                                <Text>Backup</Text>
-                              </HStack>
-                            </Menu.Item>
-                            <Menu.Separator />
-                            <Menu.Item value="delete" color="red.600" onClick={(e: any) => e.stopPropagation()}>
-                              <HStack gap="8px">
-                                <LuTrash2 size={16} />
-                                <Text>Delete</Text>
-                              </HStack>
-                            </Menu.Item>
-                          </Menu.Content>
-                        </Menu.Positioner>
-                      </Menu.Root>
-                      <Badge
-                        colorPalette={statusColors[vm.status]}
-                        variant="subtle"
-                        size="lg"
-                        borderRadius="8px"
-                        px="12px"
-                        py="6px"
-                        fontWeight="600"
-                      >
-                        {vm.status === 'running' ? 'Running' : vm.status === 'stopped' ? 'Stopped' : vm.status}
-                      </Badge>
-                    </HStack>
+                    <Badge
+                      colorPalette={statusColors[vm.status]}
+                      variant="subtle"
+                      size="lg"
+                      borderRadius="8px"
+                      px="12px"
+                      py="6px"
+                      fontWeight="600"
+                    >
+                      {vm.status === 'running' ? 'Running' : vm.status === 'stopped' ? 'Stopped' : vm.status}
+                    </Badge>
                   </HStack>
 
                   {/* Specs */}
@@ -334,6 +233,107 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
                         ${getMonthlyCost(vm).toFixed(2)}
                       </Text>
                     </VStack>
+                  </HStack>
+
+                  {/* Quick Actions */}
+                  <HStack gap="8px" justify="space-between" pt="8px" borderTop="1px solid" borderColor="var(--border-color)">
+                    {vm.status === 'stopped' && (
+                      <IconButton
+                        title="Start"
+                        aria-label="Start"
+                        size="sm"
+                        colorPalette="success"
+                        variant="ghost"
+                        borderRadius="8px"
+                        onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleVMAction('start', vm.slug); }}
+                        _hover={{ bg: 'success.50' }}
+                      >
+                        <LuPlay size={18} />
+                      </IconButton>
+                    )}
+                    {vm.status === 'running' && (
+                      <>
+                        <IconButton
+                          title="Stop"
+                          aria-label="Stop"
+                          size="sm"
+                          colorPalette="danger"
+                          variant="ghost"
+                          borderRadius="8px"
+                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleVMAction('stop', vm.slug); }}
+                          _hover={{ bg: 'danger.50' }}
+                        >
+                          <LuSquare size={18} />
+                        </IconButton>
+                        <IconButton
+                          title="Restart"
+                          aria-label="Restart"
+                          size="sm"
+                          colorPalette="warning"
+                          variant="ghost"
+                          borderRadius="8px"
+                          onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleVMAction('reboot', vm.slug); }}
+                          _hover={{ bg: 'warning.50' }}
+                        >
+                          <LuRotateCw size={18} />
+                        </IconButton>
+                      </>
+                    )}
+                    <IconButton
+                      title="Console"
+                      aria-label="Console"
+                      size="sm"
+                      variant="ghost"
+                      borderRadius="8px"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      _hover={{ bg: 'var(--bg-tertiary)' }}
+                    >
+                      <LuTerminal size={18} />
+                    </IconButton>
+                    <Menu.Root>
+                      <Menu.Trigger asChild>
+                        <IconButton
+                          title="More actions"
+                          aria-label="More actions"
+                          size="sm"
+                          variant="ghost"
+                          borderRadius="8px"
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                          _hover={{ bg: 'var(--bg-tertiary)' }}
+                        >
+                          <LuEllipsisVertical size={18} />
+                        </IconButton>
+                      </Menu.Trigger>
+                      <Menu.Positioner>
+                        <Menu.Content>
+                          <Menu.Item value="resize" onClick={(e: any) => e.stopPropagation()}>
+                            <HStack gap="8px">
+                              <LuMaximize2 size={16} />
+                              <Text>Resize</Text>
+                            </HStack>
+                          </Menu.Item>
+                          <Menu.Item value="snapshot" onClick={(e: any) => e.stopPropagation()}>
+                            <HStack gap="8px">
+                              <LuCamera size={16} />
+                              <Text>Snapshot</Text>
+                            </HStack>
+                          </Menu.Item>
+                          <Menu.Item value="backup" onClick={(e: any) => e.stopPropagation()}>
+                            <HStack gap="8px">
+                              <LuArchive size={16} />
+                              <Text>Backup</Text>
+                            </HStack>
+                          </Menu.Item>
+                          <Menu.Separator />
+                          <Menu.Item value="delete" color="red.600" onClick={(e: any) => e.stopPropagation()}>
+                            <HStack gap="8px">
+                              <LuTrash2 size={16} />
+                              <Text>Delete</Text>
+                            </HStack>
+                          </Menu.Item>
+                        </Menu.Content>
+                      </Menu.Positioner>
+                    </Menu.Root>
                   </HStack>
                 </VStack>
               </ModernCard>

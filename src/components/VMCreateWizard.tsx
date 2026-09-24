@@ -3,7 +3,7 @@ import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Separator, B
 import { useApp } from '../contexts/AppContext';
 import { api } from '../api/client';
 import type { Project, Region, Template, Plan } from '../api/types';
-import { LuX, LuChevronRight, LuChevronLeft, LuCheck, LuServer, LuCpu, LuMemoryStick, LuHardDrive, LuMapPin, LuDollarSign } from 'react-icons/lu';
+import { LuX, LuCheck, LuServer, LuCpu, LuMemoryStick, LuHardDrive, LuMapPin, LuDollarSign } from 'react-icons/lu';
 
 interface VMCreateWizardProps {
   isOpen: boolean;
@@ -12,12 +12,106 @@ interface VMCreateWizardProps {
 
 const volumeSizes = [20, 50, 100, 200, 500, 1000];
 
+// Структура образов по категориям и дистрибутивам
+const imageCategories = {
+  linux: {
+    label: 'Linux',
+    icon: '🐧',
+    distributions: [
+      {
+        name: 'Ubuntu',
+        icon: '🟠',
+        versions: [
+          { id: 'ubuntu-2404-lts-1', name: '24.04 LTS' },
+          { id: 'ubuntu-2204-lts', name: '22.04 LTS' },
+        ]
+      },
+      {
+        name: 'CentOS',
+        icon: '🎩',
+        versions: [
+          { id: 'centos-stream-10', name: 'Stream 10' },
+          { id: 'centos-9', name: '9' },
+          { id: 'centos-7-1', name: '7' },
+        ]
+      },
+      {
+        name: 'Debian',
+        icon: '🌀',
+        versions: [
+          { id: 'debian-13', name: '13' },
+          { id: 'debian-12-2', name: '12' },
+          { id: 'debian-11', name: '11' },
+        ]
+      },
+      {
+        name: 'Rocky Linux',
+        icon: '🪨',
+        versions: [
+          { id: 'rocky-linux-97', name: '9.7' },
+          { id: 'rocky-linux-8', name: '8' },
+        ]
+      },
+      {
+        name: 'AlmaLinux',
+        icon: '🦬',
+        versions: [
+          { id: 'almalinux-9-1', name: '9' },
+          { id: 'almalinux-8', name: '8' },
+        ]
+      },
+      {
+        name: 'SUSE',
+        icon: '🦎',
+        versions: [
+          { id: 'suse-16', name: '16' },
+        ]
+      },
+    ]
+  },
+  windows: {
+    label: 'Windows',
+    icon: '🪟',
+    distributions: [
+      {
+        name: 'Windows Server',
+        icon: '🪟',
+        versions: [
+          { id: 'windows-server-2025', name: '2025' },
+          { id: 'windows-server-2022', name: '2022' },
+          { id: 'windows-server-2019', name: '2019' },
+        ]
+      },
+    ]
+  },
+  marketplace: {
+    label: 'Marketplace Apps',
+    icon: '🛍️',
+    distributions: [
+      {
+        name: 'PBX & Communication',
+        icon: '📞',
+        versions: [
+          { id: 'freepbx', name: 'FREEPBX' },
+          { id: 'issabel4', name: 'ISSABEL4' },
+        ]
+      },
+      {
+        name: 'Firewall & Security',
+        icon: '🔥',
+        versions: [
+          { id: 'opnsense-2616', name: 'OPNsense 26.1.6' },
+          { id: 'pfsense27', name: 'pfSense 2.7' },
+        ]
+      },
+    ]
+  }
+};
+
 export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose }) => {
-  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     location: '',
     project: '',
-    newProjectName: '',
     image: '',
     instanceConfig: '',
     volumeSize: 20,
@@ -31,106 +125,9 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const [createError, setCreateError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<'linux' | 'windows' | 'marketplace'>('linux');
 
-  // Структура образов по категориям и дистрибутивам
-  const imageCategories = {
-    linux: {
-      label: 'Linux',
-      icon: '🐧',
-      distributions: [
-        {
-          name: 'Ubuntu',
-          icon: '🟠',
-          versions: [
-            { id: 'ubuntu-2404-lts-1', name: '24.04 LTS' },
-            { id: 'ubuntu-2204-lts', name: '22.04 LTS' },
-          ]
-        },
-        {
-          name: 'CentOS',
-          icon: '🎩',
-          versions: [
-            { id: 'centos-stream-10', name: 'Stream 10' },
-            { id: 'centos-9', name: '9' },
-            { id: 'centos-7-1', name: '7' },
-          ]
-        },
-        {
-          name: 'Debian',
-          icon: '🌀',
-          versions: [
-            { id: 'debian-13', name: '13' },
-            { id: 'debian-12-2', name: '12' },
-            { id: 'debian-11', name: '11' },
-          ]
-        },
-        {
-          name: 'Rocky Linux',
-          icon: '🪨',
-          versions: [
-            { id: 'rocky-linux-97', name: '9.7' },
-            { id: 'rocky-linux-8', name: '8' },
-          ]
-        },
-        {
-          name: 'AlmaLinux',
-          icon: '🦬',
-          versions: [
-            { id: 'almalinux-9-1', name: '9' },
-            { id: 'almalinux-8', name: '8' },
-          ]
-        },
-        {
-          name: 'SUSE',
-          icon: '🦎',
-          versions: [
-            { id: 'suse-16', name: '16' },
-          ]
-        },
-      ]
-    },
-    windows: {
-      label: 'Windows',
-      icon: '🪟',
-      distributions: [
-        {
-          name: 'Windows Server',
-          icon: '🪟',
-          versions: [
-            { id: 'windows-server-2025', name: '2025' },
-            { id: 'windows-server-2022', name: '2022' },
-            { id: 'windows-server-2019', name: '2019' },
-          ]
-        },
-      ]
-    },
-    marketplace: {
-      label: 'Marketplace Apps',
-      icon: '🛍️',
-      distributions: [
-        {
-          name: 'PBX & Communication',
-          icon: '📞',
-          versions: [
-            { id: 'freepbx', name: 'FREEPBX' },
-            { id: 'issabel4', name: 'ISSABEL4' },
-          ]
-        },
-        {
-          name: 'Firewall & Security',
-          icon: '🔥',
-          versions: [
-            { id: 'opnsense-2616', name: 'OPNsense 26.1.6' },
-            { id: 'pfsense27', name: 'pfSense 2.7' },
-          ]
-        },
-      ]
-    }
-  };
-
   // Данные из API
   const [regions, setRegions] = useState<Region[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [storageCategories, setStorageCategories] = useState<any[]>([]);
   const [billingCycles, setBillingCycles] = useState<any[]>([]);
@@ -146,10 +143,9 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   const loadAPIData = async () => {
     setLoadingData(true);
     try {
-      const [regionsData, projectsData, templatesData, plansData, storageCategoriesData, billingCyclesData] = await Promise.all([
+      const [regionsData, projectsData, plansData, storageCategoriesData, billingCyclesData] = await Promise.all([
         api.regions.list(),
         api.projects.list(),
-        api.templates.list(),
         api.plans.listVMPlans(),
         api.storageCategories.list(),
         api.billingCycles.list(),
@@ -164,7 +160,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
 
       setRegions(regionsData);
       setProjects(projectsData);
-      setTemplates(templatesData);
       setPlans(normalizedPlans);
       setStorageCategories(storageCategoriesData);
       setBillingCycles(billingCyclesData);
@@ -182,18 +177,16 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         setFormData(prev => ({ ...prev, billingCycle: billingCyclesData[0].slug }));
       }
     } catch (error) {
-      console.error('Failed to load API data:', error);
+      console.error('Failed to load API ', error);
     } finally {
       setLoadingData(false);
     }
   };
 
   const handleClose = () => {
-    setCurrentStep(1);
     setFormData({
       location: '',
       project: '',
-      newProjectName: '',
       image: '',
       instanceConfig: '',
       volumeSize: 20,
@@ -235,9 +228,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         public_ip: formData.publicIp,
         storage_category: formData.storageCategory,
         billing_cycle: formData.billingCycle,
-        blockstorage_custom_plan: {
-          storage: formData.volumeSize
-        },
       };
 
       await api.virtualMachines.create(vmData);
@@ -264,16 +254,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   };
 
   if (!isOpen) return null;
-
-  const steps = [
-    { id: 1, label: 'Region', icon: LuMapPin },
-    { id: 2, label: 'Project', icon: LuServer },
-    { id: 3, label: 'Image', icon: LuServer },
-    { id: 4, label: 'Size', icon: LuCpu },
-    { id: 5, label: 'Storage', icon: LuHardDrive },
-    { id: 6, label: 'Network', icon: LuServer },
-    { id: 7, label: 'Name', icon: LuServer },
-  ];
 
   return (
     <Box
@@ -307,17 +287,25 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
               <Heading size="lg" fontWeight="700" color="var(--text-primary)">
                 Create Virtual Machine
               </Heading>
-              <Text fontSize="14px" color="var(--text-secondary)">
-                Step {currentStep} of {steps.length}
-              </Text>
             </VStack>
           </HStack>
+          <Button
+            bg="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            color="white"
+            size="md"
+            onClick={handleCreate}
+            loading={isCreating}
+            borderRadius="8px"
+          >
+            <LuCheck size={18} />
+            Create VM
+          </Button>
         </HStack>
       </Box>
 
       {/* Main Content */}
       <Box flex={1} display="flex" overflow="hidden">
-        {/* Left: Steps */}
+        {/* Left: Configuration */}
         <Box flex={1} overflowY="auto" p="32px">
           {createError && (
             <Box mb="24px" p="16px" borderRadius="12px" bg="red.50" border="1px solid" borderColor="red.200">
@@ -327,18 +315,18 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
             </Box>
           )}
 
-          {/* Step 1: Region */}
-          {currentStep === 1 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
-                Select Region
+          <VStack gap="32px" align="stretch">
+            {/* Region */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
+                Region
               </Heading>
-              <Grid templateColumns="repeat(auto-fill, minmax(250px, 1fr))" gap="16px">
+              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="12px">
                 {regions.map((region) => (
                   <GridItem key={region.slug}>
                     <Box
-                      p="20px"
-                      borderRadius="12px"
+                      p="16px"
+                      borderRadius="10px"
                       borderWidth="2px"
                       borderColor={formData.location === region.slug ? '#3b82f6' : 'var(--border-color)'}
                       bg={formData.location === region.slug ? 'var(--bg-secondary)' : 'var(--card-bg)'}
@@ -351,31 +339,29 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                       }}
                     >
-                      <VStack gap="12px" align="start">
-                        <LuMapPin size={24} color={formData.location === region.slug ? '#3b82f6' : 'var(--text-secondary)'} />
-                        <Text fontSize="16px" fontWeight="600" color="var(--text-primary)">
+                      <HStack gap="12px">
+                        <LuMapPin size={20} color={formData.location === region.slug ? '#3b82f6' : 'var(--text-secondary)'} />
+                        <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
                           {region.name}
                         </Text>
-                      </VStack>
+                      </HStack>
                     </Box>
                   </GridItem>
                 ))}
               </Grid>
             </VStack>
-          )}
 
-          {/* Step 2: Project */}
-          {currentStep === 2 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
-                Select Project
+            {/* Project */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
+                Project
               </Heading>
-              <Grid templateColumns="repeat(auto-fill, minmax(250px, 1fr))" gap="16px">
+              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="12px">
                 {projects.map((project) => (
                   <GridItem key={project.slug}>
                     <Box
-                      p="20px"
-                      borderRadius="12px"
+                      p="16px"
+                      borderRadius="10px"
                       borderWidth="2px"
                       borderColor={formData.project === project.slug ? '#3b82f6' : 'var(--border-color)'}
                       bg={formData.project === project.slug ? 'var(--bg-secondary)' : 'var(--card-bg)'}
@@ -388,24 +374,22 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                       }}
                     >
-                      <VStack gap="12px" align="start">
-                        <LuServer size={24} color={formData.project === project.slug ? '#3b82f6' : 'var(--text-secondary)'} />
-                        <Text fontSize="16px" fontWeight="600" color="var(--text-primary)">
+                      <HStack gap="12px">
+                        <LuServer size={20} color={formData.project === project.slug ? '#3b82f6' : 'var(--text-secondary)'} />
+                        <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
                           {project.name}
                         </Text>
-                      </VStack>
+                      </HStack>
                     </Box>
                   </GridItem>
                 ))}
               </Grid>
             </VStack>
-          )}
 
-          {/* Step 3: Image */}
-          {currentStep === 3 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
-                Select Operating System
+            {/* Operating System */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
+                Operating System
               </Heading>
               
               {/* Category Tabs */}
@@ -488,20 +472,18 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 ))}
               </VStack>
             </VStack>
-          )}
 
-          {/* Step 4: Size */}
-          {currentStep === 4 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
-                Select Instance Size
+            {/* Instance Size */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
+                Instance Size
               </Heading>
-              <Grid templateColumns="repeat(auto-fill, minmax(250px, 1fr))" gap="16px">
+              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="12px">
                 {plans.map((plan) => (
                   <GridItem key={plan.slug}>
                     <Box
-                      p="20px"
-                      borderRadius="12px"
+                      p="16px"
+                      borderRadius="10px"
                       borderWidth="2px"
                       borderColor={formData.instanceConfig === plan.slug ? '#3b82f6' : 'var(--border-color)'}
                       bg={formData.instanceConfig === plan.slug ? 'var(--bg-secondary)' : 'var(--card-bg)'}
@@ -516,24 +498,24 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                     >
                       <VStack gap="12px" align="start">
                         <HStack justify="space-between" w="100%">
-                          <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
+                          <Text fontSize="14px" fontWeight="700" color="var(--text-primary)">
                             {plan.name}
                           </Text>
-                          <Text fontSize="14px" fontWeight="600" color="#3b82f6">
+                          <Text fontSize="13px" fontWeight="600" color="#3b82f6">
                             {formatCurrency(plan.price || 0)}/mo
                           </Text>
                         </HStack>
                         <Separator borderColor="var(--border-color)" />
-                        <HStack gap="16px">
+                        <HStack gap="12px">
                           <HStack gap="4px">
-                            <LuCpu size={16} color="var(--text-secondary)" />
-                            <Text fontSize="13px" fontWeight="600" color="var(--text-primary)">
+                            <LuCpu size={14} color="var(--text-secondary)" />
+                            <Text fontSize="12px" fontWeight="600" color="var(--text-primary)">
                               {plan.cpu || '?'} vCPU
                             </Text>
                           </HStack>
                           <HStack gap="4px">
-                            <LuMemoryStick size={16} color="var(--text-secondary)" />
-                            <Text fontSize="13px" fontWeight="600" color="var(--text-primary)">
+                            <LuMemoryStick size={14} color="var(--text-secondary)" />
+                            <Text fontSize="12px" fontWeight="600" color="var(--text-primary)">
                               {plan.ram || '?'} GB
                             </Text>
                           </HStack>
@@ -544,20 +526,18 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 ))}
               </Grid>
             </VStack>
-          )}
 
-          {/* Step 5: Storage */}
-          {currentStep === 5 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
-                Select Storage Size
+            {/* Storage */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
+                Storage Size
               </Heading>
-              <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap="16px">
+              <Grid templateColumns="repeat(auto-fill, minmax(120px, 1fr))" gap="12px">
                 {volumeSizes.map((size) => (
                   <GridItem key={size}>
                     <Box
-                      p="20px"
-                      borderRadius="12px"
+                      p="16px"
+                      borderRadius="10px"
                       borderWidth="2px"
                       borderColor={formData.volumeSize === size ? '#3b82f6' : 'var(--border-color)'}
                       bg={formData.volumeSize === size ? 'var(--bg-secondary)' : 'var(--card-bg)'}
@@ -572,8 +552,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                       }}
                     >
                       <VStack gap="8px">
-                        <LuHardDrive size={24} color={formData.volumeSize === size ? '#3b82f6' : 'var(--text-secondary)'} />
-                        <Text fontSize="18px" fontWeight="700" color="var(--text-primary)">
+                        <LuHardDrive size={20} color={formData.volumeSize === size ? '#3b82f6' : 'var(--text-secondary)'} />
+                        <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
                           {size} GB
                         </Text>
                       </VStack>
@@ -582,120 +562,106 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 ))}
               </Grid>
             </VStack>
-          )}
 
-          {/* Step 6: Network */}
-          {currentStep === 6 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
+            {/* Network */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
                 Network Configuration
               </Heading>
-              <VStack gap="16px" align="stretch">
-                <Text fontSize="14px" fontWeight="600" color="var(--text-secondary)">
-                  Network Type
-                </Text>
-                <HStack gap="16px">
-                  <Box
-                    flex={1}
-                    p="20px"
-                    borderRadius="12px"
-                    borderWidth="2px"
-                    borderColor={formData.networkType === 'Isolated' ? '#3b82f6' : 'var(--border-color)'}
-                    bg={formData.networkType === 'Isolated' ? 'var(--bg-secondary)' : 'var(--card-bg)'}
-                    cursor="pointer"
-                    onClick={() => setFormData({ ...formData, networkType: 'Isolated' })}
-                    transition="all 0.2s"
-                  >
-                    <VStack gap="8px" align="start">
-                      <Text fontSize="16px" fontWeight="600" color="var(--text-primary)">
-                        Isolated
-                      </Text>
-                      <Text fontSize="13px" color="var(--text-secondary)">
-                        Private network
-                      </Text>
-                    </VStack>
-                  </Box>
-                  <Box
-                    flex={1}
-                    p="20px"
-                    borderRadius="12px"
-                    borderWidth="2px"
-                    borderColor={formData.networkType === 'VPC' ? '#3b82f6' : 'var(--border-color)'}
-                    bg={formData.networkType === 'VPC' ? 'var(--bg-secondary)' : 'var(--card-bg)'}
-                    cursor="pointer"
-                    onClick={() => setFormData({ ...formData, networkType: 'VPC' })}
-                    transition="all 0.2s"
-                  >
-                    <VStack gap="8px" align="start">
-                      <Text fontSize="16px" fontWeight="600" color="var(--text-primary)">
-                        VPC
-                      </Text>
-                      <Text fontSize="13px" color="var(--text-secondary)">
-                        Virtual Private Cloud
-                      </Text>
-                    </VStack>
-                  </Box>
-                </HStack>
-
+              <HStack gap="12px">
                 <Box
+                  flex={1}
                   p="16px"
-                  borderRadius="12px"
+                  borderRadius="10px"
                   borderWidth="2px"
-                  borderColor={formData.publicIp ? '#3b82f6' : 'var(--border-color)'}
-                  bg={formData.publicIp ? 'var(--bg-secondary)' : 'var(--card-bg)'}
+                  borderColor={formData.networkType === 'Isolated' ? '#3b82f6' : 'var(--border-color)'}
+                  bg={formData.networkType === 'Isolated' ? 'var(--bg-secondary)' : 'var(--card-bg)'}
                   cursor="pointer"
-                  onClick={() => setFormData({ ...formData, publicIp: !formData.publicIp })}
+                  onClick={() => setFormData({ ...formData, networkType: 'Isolated' })}
                   transition="all 0.2s"
                 >
-                  <HStack justify="space-between">
-                    <VStack gap="4px" align="start">
-                      <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
-                        Public IP Address
-                      </Text>
-                      <Text fontSize="13px" color="var(--text-secondary)">
-                        Assign a public IP for internet access
-                      </Text>
-                    </VStack>
-                    <Box
-                      w="24px"
-                      h="24px"
-                      borderRadius="6px"
-                      borderWidth="2px"
-                      borderColor={formData.publicIp ? '#3b82f6' : 'var(--border-color)'}
-                      bg={formData.publicIp ? '#3b82f6' : 'transparent'}
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      {formData.publicIp && <LuCheck size={16} color="white" />}
-                    </Box>
-                  </HStack>
+                  <VStack gap="8px" align="start">
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      Isolated
+                    </Text>
+                    <Text fontSize="12px" color="var(--text-secondary)">
+                      Private network
+                    </Text>
+                  </VStack>
                 </Box>
-              </VStack>
-            </VStack>
-          )}
-
-          {/* Step 7: Name */}
-          {currentStep === 7 && (
-            <VStack gap="24px" align="stretch">
-              <Heading size="md" fontWeight="700" color="var(--text-primary)">
-                Name Your Virtual Machine
-              </Heading>
-              <VStack gap="12px" align="stretch">
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., web-server-01, api-instance"
-                  size="lg"
-                  borderRadius="12px"
+                <Box
+                  flex={1}
+                  p="16px"
+                  borderRadius="10px"
                   borderWidth="2px"
-                />
-                <Text fontSize="13px" color="var(--text-secondary)">
-                  Use a descriptive name to identify your server
-                </Text>
-              </VStack>
+                  borderColor={formData.networkType === 'VPC' ? '#3b82f6' : 'var(--border-color)'}
+                  bg={formData.networkType === 'VPC' ? 'var(--bg-secondary)' : 'var(--card-bg)'}
+                  cursor="pointer"
+                  onClick={() => setFormData({ ...formData, networkType: 'VPC' })}
+                  transition="all 0.2s"
+                >
+                  <VStack gap="8px" align="start">
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      VPC
+                    </Text>
+                    <Text fontSize="12px" color="var(--text-secondary)">
+                      Virtual Private Cloud
+                    </Text>
+                  </VStack>
+                </Box>
+              </HStack>
+
+              <Box
+                p="16px"
+                borderRadius="10px"
+                borderWidth="2px"
+                borderColor={formData.publicIp ? '#3b82f6' : 'var(--border-color)'}
+                bg={formData.publicIp ? 'var(--bg-secondary)' : 'var(--card-bg)'}
+                cursor="pointer"
+                onClick={() => setFormData({ ...formData, publicIp: !formData.publicIp })}
+                transition="all 0.2s"
+              >
+                <HStack justify="space-between">
+                  <VStack gap="4px" align="start">
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      Public IP Address
+                    </Text>
+                    <Text fontSize="12px" color="var(--text-secondary)">
+                      Assign a public IP for internet access
+                    </Text>
+                  </VStack>
+                  <Box
+                    w="24px"
+                    h="24px"
+                    borderRadius="6px"
+                    borderWidth="2px"
+                    borderColor={formData.publicIp ? '#3b82f6' : 'var(--border-color)'}
+                    bg={formData.publicIp ? '#3b82f6' : 'transparent'}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    {formData.publicIp && <LuCheck size={16} color="white" />}
+                  </Box>
+                </HStack>
+              </Box>
             </VStack>
-          )}
+
+            {/* VM Name */}
+            <VStack gap="16px" align="stretch">
+              <Heading size="sm" fontWeight="700" color="var(--text-primary)">
+                Virtual Machine Name
+              </Heading>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., web-server-01, api-instance"
+                size="lg"
+                borderRadius="10px"
+                borderWidth="2px"
+              />
+            </VStack>
+          </VStack>
         </Box>
 
         {/* Right: Summary Sidebar */}
@@ -730,7 +696,15 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
               <HStack justify="space-between">
                 <Text fontSize="14px" color="var(--text-secondary)">Image</Text>
                 <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
-                  {templates.find(t => t.slug === formData.image)?.name || '—'}
+                  {(() => {
+                    for (const cat of Object.values(imageCategories)) {
+                      for (const dist of cat.distributions) {
+                        const version = dist.versions.find((v: any) => v.id === formData.image);
+                        if (version) return `${dist.name} ${version.name}`;
+                      }
+                    }
+                    return '—';
+                  })()}
                 </Text>
               </HStack>
 
@@ -789,61 +763,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
             </Box>
           </VStack>
         </Box>
-      </Box>
-
-      {/* Footer with Navigation Buttons */}
-      <Box
-        bg="var(--card-bg)"
-        borderTop="1px solid"
-        borderTopColor="var(--border-color)"
-        px="24px"
-        py="16px"
-      >
-        <HStack justify="space-between">
-          {createError && (
-            <Box p="12px" borderRadius="8px" bg="red.50" border="1px solid" borderColor="red.200">
-              <Text fontSize="13px" color="red.700" fontWeight="500">
-                {createError}
-              </Text>
-            </Box>
-          )}
-          <HStack gap="12px" ml="auto">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1 || isCreating}
-              borderRadius="8px"
-            >
-              <LuChevronLeft size={18} />
-              Back
-            </Button>
-            {currentStep < steps.length ? (
-              <Button
-                bg="linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)"
-                color="white"
-                size="md"
-                onClick={() => setCurrentStep(currentStep + 1)}
-                borderRadius="8px"
-              >
-                Next
-                <LuChevronRight size={18} />
-              </Button>
-            ) : (
-              <Button
-                bg="linear-gradient(135deg, #10b981 0%, #059669 100%)"
-                color="white"
-                size="md"
-                onClick={handleCreate}
-                loading={isCreating}
-                borderRadius="8px"
-              >
-                <LuCheck size={18} />
-                Create VM
-              </Button>
-            )}
-          </HStack>
-        </HStack>
       </Box>
     </Box>
   );

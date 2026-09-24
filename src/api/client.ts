@@ -410,8 +410,12 @@ export const api = {
         payload.network_plan = data.network_plan;
       }
       
-      // Убираем blockstorage_custom_plan - API не принимает это поле
-      delete payload.blockstorage_custom_plan;
+      // Добавляем blockstorage_custom_plan если указан disk_size
+      if (data.disk_size && !payload.blockstorage_custom_plan) {
+        payload.blockstorage_custom_plan = {
+          storage: data.disk_size
+        };
+      }
       
       // Преобразуем public_ip для API
       if (typeof data.public_ip === 'boolean') {
