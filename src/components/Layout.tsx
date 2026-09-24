@@ -4,12 +4,12 @@ import {
   LuLayoutDashboard, LuServer, LuContainer, LuImage, LuHardDrive, LuCamera,
   LuNetwork, LuGlobe, LuShield, LuKey, LuDatabase, LuActivity, LuShoppingBag,
   LuCreditCard, LuLifeBuoy, LuSettings, LuSearch, LuBell, LuPlus, LuMoon, LuSun,
-  LuChevronDown, LuMenu
+  LuChevronDown, LuMenu, LuCpu
 } from 'react-icons/lu';
 import { useApp } from '../contexts/AppContext';
 
-export type Page = 'dashboard' | 'vms' | 'kubernetes' | 'images' | 'volumes' | 'snapshots' | 
-            'networks' | 'floating-ips' | 'firewalls' | 'ssh-keys' | 'object-storage' |
+export type Page = 'dashboard' | 'vms' | 'kubernetes' | 'gpu' | 'dbaas' | 'images' | 'volumes' | 'snapshots' | 
+            'networks' | 'floating-ips' | 'firewalls' | 'anti-ddos' | 'ssh-keys' | 'object-storage' |
             'load-balancers' | 'dns' | 'monitoring' | 'marketplace' | 'billing' | 
             'support' | 'settings';
 
@@ -21,25 +21,76 @@ interface NavItem {
   badge?: string;
 }
 
-const navItems: NavItem[] = [
-  { id: 'dashboard', icon: LuLayoutDashboard, label: 'Dashboard', labelUz: 'Boshqaruv paneli' },
-  { id: 'vms', icon: LuServer, label: 'Virtual Machines', labelUz: 'Virtual mashinalar' },
-  { id: 'kubernetes', icon: LuContainer, label: 'Kubernetes', badge: 'Скоро' },
-  { id: 'images', icon: LuImage, label: 'Images', labelUz: 'Rasmlar' },
-  { id: 'volumes', icon: LuHardDrive, label: 'Volumes', labelUz: 'Hajmlar' },
-  { id: 'snapshots', icon: LuCamera, label: 'Snapshots', labelUz: 'Snapshotlar' },
-  { id: 'networks', icon: LuNetwork, label: 'Networks', labelUz: 'Tarmoqlar' },
-  { id: 'floating-ips', icon: LuGlobe, label: 'Floating IPs', labelUz: 'Suzuvchi IP' },
-  { id: 'firewalls', icon: LuShield, label: 'Firewalls', labelUz: 'Xavfsizlik devorlari' },
-  { id: 'ssh-keys', icon: LuKey, label: 'SSH Keys', labelUz: 'SSH kalitlari' },
-  { id: 'object-storage', icon: LuDatabase, label: 'Object Storage', labelUz: 'Ob\'ektli saqlash' },
-  { id: 'load-balancers', icon: LuActivity, label: 'Load Balancers', labelUz: 'Yuk balanseri' },
-  { id: 'dns', icon: LuGlobe, label: 'DNS', labelUz: 'DNS' },
-  { id: 'monitoring', icon: LuActivity, label: 'Monitoring', labelUz: 'Monitoring' },
-  { id: 'marketplace', icon: LuShoppingBag, label: 'Marketplace', labelUz: 'Bozor' },
-  { id: 'billing', icon: LuCreditCard, label: 'Billing', labelUz: 'To\'lovlar' },
-  { id: 'support', icon: LuLifeBuoy, label: 'Support', labelUz: 'Qo\'llab-quvvatlash' },
-  { id: 'settings', icon: LuSettings, label: 'Settings', labelUz: 'Sozlamalar' },
+interface NavGroup {
+  title: string;
+  titleUz?: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    title: 'Overview',
+    titleUz: 'Umumiy',
+    items: [
+      { id: 'dashboard', icon: LuLayoutDashboard, label: 'Dashboard', labelUz: 'Boshqaruv paneli' },
+    ],
+  },
+  {
+    title: 'Compute',
+    titleUz: 'Hisoblash',
+    items: [
+      { id: 'vms', icon: LuServer, label: 'Virtual Machines', labelUz: 'Virtual mashinalar' },
+      { id: 'images', icon: LuImage, label: 'Images', labelUz: 'Rasmlar' },
+      { id: 'volumes', icon: LuHardDrive, label: 'Volumes', labelUz: 'Hajmlar' },
+      { id: 'snapshots', icon: LuCamera, label: 'Snapshots', labelUz: 'Snapshotlar' },
+    ],
+  },
+  {
+    title: 'PaaS',
+    titleUz: 'PaaS',
+    items: [
+      { id: 'kubernetes', icon: LuContainer, label: 'Kubernetes', badge: 'Скоро' },
+      { id: 'gpu', icon: LuCpu, label: 'GPUaaS', badge: 'Скоро' },
+      { id: 'dbaas', icon: LuDatabase, label: 'DBaaS', badge: 'Скоро' },
+    ],
+  },
+  {
+    title: 'Networking',
+    titleUz: 'Tarmoq',
+    items: [
+      { id: 'networks', icon: LuNetwork, label: 'Networks', labelUz: 'Tarmoqlar' },
+      { id: 'floating-ips', icon: LuGlobe, label: 'Floating IPs', labelUz: 'Suzuvchi IP' },
+      { id: 'load-balancers', icon: LuActivity, label: 'Load Balancers', labelUz: 'Yuk balanseri' },
+      { id: 'dns', icon: LuGlobe, label: 'DNS', labelUz: 'DNS' },
+    ],
+  },
+  {
+    title: 'Security',
+    titleUz: 'Xavfsizlik',
+    items: [
+      { id: 'firewalls', icon: LuShield, label: 'Firewalls', labelUz: 'Xavfsizlik devorlari' },
+      { id: 'anti-ddos', icon: LuShield, label: 'Anti-DDoS', labelUz: 'Anti-DDoS', badge: 'Скоро' },
+      { id: 'ssh-keys', icon: LuKey, label: 'SSH Keys', labelUz: 'SSH kalitlari' },
+    ],
+  },
+  {
+    title: 'Platform',
+    titleUz: 'Platforma',
+    items: [
+      { id: 'object-storage', icon: LuDatabase, label: 'Object Storage', labelUz: 'Ob\'ektli saqlash' },
+      { id: 'monitoring', icon: LuActivity, label: 'Monitoring', labelUz: 'Monitoring' },
+      { id: 'marketplace', icon: LuShoppingBag, label: 'Marketplace', labelUz: 'Bozor' },
+    ],
+  },
+  {
+    title: 'Account',
+    titleUz: 'Akkaunt',
+    items: [
+      { id: 'billing', icon: LuCreditCard, label: 'Billing', labelUz: 'To\'lovlar' },
+      { id: 'support', icon: LuLifeBuoy, label: 'Support', labelUz: 'Qo\'llab-quvvatlash' },
+      { id: 'settings', icon: LuSettings, label: 'Settings', labelUz: 'Sozlamalar' },
+    ],
+  },
 ];
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -99,48 +150,63 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </Box>
 
         {/* Navigation */}
-        <VStack gap="2px" p="12px" flex={1} align="stretch">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            const label = language === 'uz' ? item.labelUz || item.label : item.label;
-            
-            return (
-              <Box
-                key={item.id}
-                p="10px 12px"
-                borderRadius="8px"
-                bg={isActive ? 'var(--bg-tertiary)' : 'transparent'}
-                color={isActive ? 'var(--text-primary)' : 'var(--text-secondary)'}
-                cursor="pointer"
-                onClick={() => setCurrentPage(item.id)}
-                transition="all 0.15s"
-                _hover={{
-                  bg: isActive ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
-                }}
+        <VStack gap="16px" p="12px" flex={1} align="stretch" overflowY="auto">
+          {navGroups.map((group) => (
+            <VStack key={group.title} gap="2px" align="stretch">
+              <Text 
+                fontSize="11px" 
+                fontWeight="700" 
+                color="var(--text-tertiary)" 
+                textTransform="uppercase"
+                letterSpacing="0.05em"
+                px="12px"
+                py="8px"
               >
-                <HStack gap="10px">
-                  <Icon size={18} />
-                  <Text fontSize="14px" fontWeight={isActive ? '600' : '500'} flex={1}>
-                    {label}
-                  </Text>
-                  {item.badge && (
-                    <Badge 
-                      size="sm" 
-                      colorPalette="orange" 
-                      variant="subtle"
-                      borderRadius="6px"
-                      px="6px"
-                      py="2px"
-                      fontSize="10px"
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </HStack>
-              </Box>
-            );
-          })}
+                {language === 'uz' ? group.titleUz || group.title : group.title}
+              </Text>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                const label = language === 'uz' ? item.labelUz || item.label : item.label;
+                
+                return (
+                  <Box
+                    key={item.id}
+                    p="10px 12px"
+                    borderRadius="8px"
+                    bg={isActive ? 'var(--bg-tertiary)' : 'transparent'}
+                    color={isActive ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                    cursor="pointer"
+                    onClick={() => setCurrentPage(item.id)}
+                    transition="all 0.15s"
+                    _hover={{
+                      bg: isActive ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                    }}
+                  >
+                    <HStack gap="10px">
+                      <Icon size={18} />
+                      <Text fontSize="14px" fontWeight={isActive ? '600' : '500'} flex={1}>
+                        {label}
+                      </Text>
+                      {item.badge && (
+                        <Badge 
+                          size="sm" 
+                          colorPalette="orange" 
+                          variant="subtle"
+                          borderRadius="6px"
+                          px="6px"
+                          py="2px"
+                          fontSize="10px"
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </HStack>
+                  </Box>
+                );
+              })}
+            </VStack>
+          ))}
         </VStack>
       </Box>
 
