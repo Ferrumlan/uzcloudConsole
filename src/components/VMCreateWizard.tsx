@@ -29,6 +29,103 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   });
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'linux' | 'windows' | 'marketplace'>('linux');
+
+  // Структура образов по категориям и дистрибутивам
+  const imageCategories = {
+    linux: {
+      label: 'Linux',
+      icon: '🐧',
+      distributions: [
+        {
+          name: 'Ubuntu',
+          icon: '🟠',
+          versions: [
+            { id: 'ubuntu-2404-lts-1', name: '24.04 LTS' },
+            { id: 'ubuntu-2204-lts', name: '22.04 LTS' },
+          ]
+        },
+        {
+          name: 'CentOS',
+          icon: '🎩',
+          versions: [
+            { id: 'centos-stream-10', name: 'Stream 10' },
+            { id: 'centos-9', name: '9' },
+            { id: 'centos-7-1', name: '7' },
+          ]
+        },
+        {
+          name: 'Debian',
+          icon: '🌀',
+          versions: [
+            { id: 'debian-13', name: '13' },
+            { id: 'debian-12-2', name: '12' },
+            { id: 'debian-11', name: '11' },
+          ]
+        },
+        {
+          name: 'Rocky Linux',
+          icon: '🪨',
+          versions: [
+            { id: 'rocky-linux-97', name: '9.7' },
+            { id: 'rocky-linux-8', name: '8' },
+          ]
+        },
+        {
+          name: 'AlmaLinux',
+          icon: '🦬',
+          versions: [
+            { id: 'almalinux-9-1', name: '9' },
+            { id: 'almalinux-8', name: '8' },
+          ]
+        },
+        {
+          name: 'SUSE',
+          icon: '🦎',
+          versions: [
+            { id: 'suse-16', name: '16' },
+          ]
+        },
+      ]
+    },
+    windows: {
+      label: 'Windows',
+      icon: '🪟',
+      distributions: [
+        {
+          name: 'Windows Server',
+          icon: '🪟',
+          versions: [
+            { id: 'windows-server-2025', name: '2025' },
+            { id: 'windows-server-2022', name: '2022' },
+            { id: 'windows-server-2019', name: '2019' },
+          ]
+        },
+      ]
+    },
+    marketplace: {
+      label: 'Marketplace Apps',
+      icon: '🛍️',
+      distributions: [
+        {
+          name: 'PBX & Communication',
+          icon: '📞',
+          versions: [
+            { id: 'freepbx', name: 'FREEPBX' },
+            { id: 'issabel4', name: 'ISSABEL4' },
+          ]
+        },
+        {
+          name: 'Firewall & Security',
+          icon: '🔥',
+          versions: [
+            { id: 'opnsense-2616', name: 'OPNsense 26.1.6' },
+            { id: 'pfsense27', name: 'pfSense 2.7' },
+          ]
+        },
+      ]
+    }
+  };
 
   // Данные из API
   const [regions, setRegions] = useState<Region[]>([]);
@@ -138,6 +235,9 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         public_ip: formData.publicIp,
         storage_category: formData.storageCategory,
         billing_cycle: formData.billingCycle,
+        blockstorage_custom_plan: {
+          storage: formData.volumeSize
+        },
       };
 
       await api.virtualMachines.create(vmData);
@@ -211,42 +311,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 Step {currentStep} of {steps.length}
               </Text>
             </VStack>
-          </HStack>
-          <HStack gap="12px">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1}
-              borderRadius="8px"
-            >
-              <LuChevronLeft size={18} />
-              Back
-            </Button>
-            {currentStep < steps.length ? (
-              <Button
-                bg="linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)"
-                color="white"
-                size="md"
-                onClick={() => setCurrentStep(currentStep + 1)}
-                borderRadius="8px"
-              >
-                Next
-                <LuChevronRight size={18} />
-              </Button>
-            ) : (
-              <Button
-                bg="linear-gradient(135deg, #10b981 0%, #059669 100%)"
-                color="white"
-                size="md"
-                onClick={handleCreate}
-                loading={isCreating}
-                borderRadius="8px"
-              >
-                <LuCheck size={18} />
-                Create VM
-              </Button>
-            )}
           </HStack>
         </HStack>
       </Box>
@@ -343,34 +407,86 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
               <Heading size="md" fontWeight="700" color="var(--text-primary)">
                 Select Operating System
               </Heading>
-              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="16px">
-                {templates.map((template) => (
-                  <GridItem key={template.slug}>
-                    <Box
-                      p="20px"
-                      borderRadius="12px"
-                      borderWidth="2px"
-                      borderColor={formData.image === template.slug ? '#3b82f6' : 'var(--border-color)'}
-                      bg={formData.image === template.slug ? 'var(--bg-secondary)' : 'var(--card-bg)'}
-                      cursor="pointer"
-                      onClick={() => setFormData({ ...formData, image: template.slug })}
-                      transition="all 0.2s"
-                      _hover={{
-                        borderColor: '#3b82f6',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                      }}
-                    >
-                      <VStack gap="12px" align="start">
-                        <Text fontSize="32px">🐧</Text>
-                        <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
-                          {template.name}
-                        </Text>
-                      </VStack>
-                    </Box>
-                  </GridItem>
+              
+              {/* Category Tabs */}
+              <HStack gap="8px">
+                <Button
+                  size="md"
+                  variant={selectedCategory === 'linux' ? 'solid' : 'ghost'}
+                  colorPalette={selectedCategory === 'linux' ? 'blue' : 'gray'}
+                  onClick={() => setSelectedCategory('linux')}
+                  borderRadius="8px"
+                >
+                  <HStack gap="8px">
+                    <span>🐧</span>
+                    <span>Linux</span>
+                  </HStack>
+                </Button>
+                <Button
+                  size="md"
+                  variant={selectedCategory === 'windows' ? 'solid' : 'ghost'}
+                  colorPalette={selectedCategory === 'windows' ? 'blue' : 'gray'}
+                  onClick={() => setSelectedCategory('windows')}
+                  borderRadius="8px"
+                >
+                  <HStack gap="8px">
+                    <span>🪟</span>
+                    <span>Windows</span>
+                  </HStack>
+                </Button>
+                <Button
+                  size="md"
+                  variant={selectedCategory === 'marketplace' ? 'solid' : 'ghost'}
+                  colorPalette={selectedCategory === 'marketplace' ? 'blue' : 'gray'}
+                  onClick={() => setSelectedCategory('marketplace')}
+                  borderRadius="8px"
+                >
+                  <HStack gap="8px">
+                    <span>🛍️</span>
+                    <span>Marketplace Apps</span>
+                  </HStack>
+                </Button>
+              </HStack>
+
+              {/* Distributions Grid */}
+              <VStack gap="20px" align="stretch">
+                {imageCategories[selectedCategory].distributions.map((dist: any) => (
+                  <VStack key={dist.name} gap="12px" align="stretch">
+                    <HStack gap="8px">
+                      <Text fontSize="24px">{dist.icon}</Text>
+                      <Text fontSize="16px" fontWeight="600" color="var(--text-primary)">
+                        {dist.name}
+                      </Text>
+                    </HStack>
+                    <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap="12px">
+                      {dist.versions.map((version: any) => (
+                        <GridItem key={version.id}>
+                          <Box
+                            p="16px"
+                            borderRadius="10px"
+                            borderWidth="2px"
+                            borderColor={formData.image === version.id ? '#3b82f6' : 'var(--border-color)'}
+                            bg={formData.image === version.id ? 'var(--bg-secondary)' : 'var(--card-bg)'}
+                            cursor="pointer"
+                            onClick={() => setFormData({ ...formData, image: version.id })}
+                            transition="all 0.2s"
+                            textAlign="center"
+                            _hover={{
+                              borderColor: '#3b82f6',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                            }}
+                          >
+                            <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                              {version.name}
+                            </Text>
+                          </Box>
+                        </GridItem>
+                      ))}
+                    </Grid>
+                  </VStack>
                 ))}
-              </Grid>
+              </VStack>
             </VStack>
           )}
 
@@ -673,6 +789,61 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
             </Box>
           </VStack>
         </Box>
+      </Box>
+
+      {/* Footer with Navigation Buttons */}
+      <Box
+        bg="var(--card-bg)"
+        borderTop="1px solid"
+        borderTopColor="var(--border-color)"
+        px="24px"
+        py="16px"
+      >
+        <HStack justify="space-between">
+          {createError && (
+            <Box p="12px" borderRadius="8px" bg="red.50" border="1px solid" borderColor="red.200">
+              <Text fontSize="13px" color="red.700" fontWeight="500">
+                {createError}
+              </Text>
+            </Box>
+          )}
+          <HStack gap="12px" ml="auto">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+              disabled={currentStep === 1 || isCreating}
+              borderRadius="8px"
+            >
+              <LuChevronLeft size={18} />
+              Back
+            </Button>
+            {currentStep < steps.length ? (
+              <Button
+                bg="linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)"
+                color="white"
+                size="md"
+                onClick={() => setCurrentStep(currentStep + 1)}
+                borderRadius="8px"
+              >
+                Next
+                <LuChevronRight size={18} />
+              </Button>
+            ) : (
+              <Button
+                bg="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                color="white"
+                size="md"
+                onClick={handleCreate}
+                loading={isCreating}
+                borderRadius="8px"
+              >
+                <LuCheck size={18} />
+                Create VM
+              </Button>
+            )}
+          </HStack>
+        </HStack>
       </Box>
     </Box>
   );
