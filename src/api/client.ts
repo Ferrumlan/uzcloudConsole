@@ -33,23 +33,36 @@ function normalizeVM(apiVM: any): VirtualMachine {
   const memoryMB = parseInt(offering.memory || apiVM.memory || '0', 10) || 0;
   const ram = memoryMB > 100 ? Math.round(memoryMB / 1024) : memoryMB; // Если > 100, значит в MB
   
-  // Storage: строка "50" (GB) → число 50
-  // Пробуем разные возможные поля
-  const disk = parseInt(
-    offering.storage || 
-    offering.disk || 
-    offering.disk_size || 
-    offering.volume_size ||
-    apiVM.disk || 
-    apiVM.disk_size || 
-    apiVM.storage ||
-    apiVM.volume_size ||
-    apiVM.blockstorage?.size ||
-    '0', 
-    10
-  ) || 0;
+  // Storage: парсим formatted_storage "50.0 (GB)" → число 50
+  // API хранит реальный размер в formatted_storage, а не в storage
+  let disk = 0;
   
-  console.log('Extracted disk value:', disk);
+  if (offering.formatted_storage) {
+    // Парсим "50.0 (GB)" → 50
+    const match = offering.formatted_storage.match(/^([\d.]+)/);
+    if (match) {
+      disk = parseFloat(match[1]);
+    }
+  }
+  
+  // Fallback на другие поля
+  if (!disk) {
+    disk = parseInt(
+      offering.storage || 
+      offering.disk || 
+      offering.disk_size || 
+      offering.volume_size ||
+      apiVM.disk || 
+      apiVM.disk_size || 
+      apiVM.storage ||
+      apiVM.volume_size ||
+      apiVM.blockstorage?.size ||
+      '0', 
+      10
+    ) || 0;
+  }
+  
+  console.log('Extracted disk value:', disk, 'from formatted_storage:', offering.formatted_storage);
 
   console.log('Extracted config:', { cpu, ram, disk, memoryMB });
 
