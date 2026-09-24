@@ -211,6 +211,24 @@ export const api = {
       
       return data;
     },
+    
+    listNetworkPlans: async () => {
+      const response = await apiRequest<any>('/plans/service/Network');
+      const data = response.data?.data || response.data || [];
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('=== Network Plans API Response ===');
+        console.log('Total network plans:', data.length);
+        console.log('First network plan sample:', {
+          id: data[0].id,
+          slug: data[0].slug,
+          name: data[0].name,
+          network_type: data[0].network_type,
+        });
+      }
+      
+      return data;
+    },
   },
 
   // Storage Categories
