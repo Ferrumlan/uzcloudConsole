@@ -392,35 +392,58 @@ export const api = {
       const payload: any = {
         ...data,
         billing_cycle: data.billing_cycle || 'monthly',
-        storage_category: data.storage_category || 'standard',
       };
       
-      // Если указан disk_size, добавляем blockstorage_custom_plan
-      if (data.disk_size && !data.blockstorage_custom_plan) {
-        payload.blockstorage_custom_plan = {
-          storage: data.disk_size
-        };
+      // Добавляем storage_category только если указан
+      if (data.storage_category) {
+        payload.storage_category = data.storage_category;
       }
+      
+      // Добавляем network_plan только если указан
+      if (data.network_plan) {
+        payload.network_plan = data.network_plan;
+      }
+      
+      // Убираем blockstorage_custom_plan - API не принимает это поле
+      delete payload.blockstorage_custom_plan;
       
       // Преобразуем public_ip для API
       if (typeof data.public_ip === 'boolean') {
-        // API ожидает массив объектов с флагом is_public
-        payload.public_ip = data.public_ip ? [{ is_public: true }] : [];
+        if (data.public_ip) {
+          // Только если true, добавляем массив
+          payload.public_ip = [{ is_public: true }];
+        } else {
+          // Если false, удаляем поле полностью
+          delete payload.public_ip;
+        }
       } else if (Array.isArray(data.public_ip)) {
-        // Если уже массив, добавляем is_public к каждому элементу
-        payload.public_ip = data.public_ip.map((ip: any) => ({
-          ...ip,
-          is_public: true
-        }));
+        // Если массив пустой, удаляем поле
+        if (data.public_ip.length === 0) {
+          delete payload.public_ip;
+        } else {
+          // Если уже массив, добавляем is_public к каждому элементу
+          payload.public_ip = data.public_ip.map((ip: any) => ({
+            ...ip,
+            is_public: true
+          }));
+        }
       }
       
       console.log('Creating VM with payload:', JSON.stringify(payload, null, 2));
       
-      const response = await apiRequest<any>('/virtual-machines', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }, 60000); // 60 секунд для создания ВМ
-      return response.data || response;
+      try {
+        const response = await apiRequest<any>('/virtual-machines', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }, 60000); // 60 секунд для создания ВМ
+        
+        console.log('VM creation response:', response);
+        return response.data || response;
+      } catch (error) {
+        console.error('VM creation failed:', error);
+        console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+        throw error;
+      }
     },
 
     start: async (slug: string): Promise<void> => {
