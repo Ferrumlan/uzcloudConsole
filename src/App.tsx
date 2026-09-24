@@ -7,15 +7,13 @@ import { DashboardPage } from './pages/DashboardPage';
 import { VMListPage } from './pages/VMListPage';
 import { VMDetailPage } from './pages/VMDetailPage';
 import { BillingPage } from './pages/BillingPage';
+import { PlaceholderPage } from './pages/PlaceholderPage';
 import type { VirtualMachine } from './api/types';
-import { LuCircleAlert } from 'react-icons/lu';
-
-// Проверка переменных окружения
-console.log('Environment check:', {
-  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-  VITE_API_TOKEN: import.meta.env.VITE_API_TOKEN ? 'SET' : 'NOT SET',
-  VITE_USE_MOCK: import.meta.env.VITE_USE_MOCK,
-});
+import { 
+  LuContainer, LuDatabase, LuNetwork, LuHardDrive, LuCamera, LuSettings,
+  LuImage, LuGlobe, LuShield, LuKey, LuActivity, LuShoppingBag, LuLifeBuoy,
+  LuCircleAlert
+} from 'react-icons/lu';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, user, currentPage, isLoading, loadError } = useApp();
@@ -35,19 +33,19 @@ const AppContent: React.FC = () => {
         display="flex"
         alignItems="center"
         justifyContent="center"
-        bg="#f8fafc"
+        bg="var(--bg-secondary)"
       >
         <VStack gap="16px">
           <Spinner size="xl" color="brand.500" borderWidth="3px" />
-          <Text fontSize="16px" color="gray.600" fontWeight="500">
-            Загрузка...
+          <Text fontSize="16px" color="var(--text-secondary)" fontWeight="500">
+            Loading...
           </Text>
         </VStack>
       </Box>
     );
   }
 
-  // Экран ошибки (если токен невалидный или API недоступен)
+  // Экран ошибки (если токен невалидный)
   if (!isAuthenticated || !user) {
     return (
       <Box
@@ -55,11 +53,11 @@ const AppContent: React.FC = () => {
         display="flex"
         alignItems="center"
         justifyContent="center"
-        bg="#f8fafc"
+        bg="var(--bg-secondary)"
         p="24px"
       >
         <Box
-          bg="white"
+          bg="var(--card-bg)"
           borderRadius="24px"
           p="48px"
           maxW="500px"
@@ -79,11 +77,11 @@ const AppContent: React.FC = () => {
               <LuCircleAlert size={40} />
             </Box>
             <VStack gap="12px">
-              <Text fontSize="24px" fontWeight="700" color="gray.900">
-                Ошибка авторизации
+              <Text fontSize="24px" fontWeight="700" color="var(--text-primary)">
+                Authentication Error
               </Text>
-              <Text fontSize="16px" color="gray.600" textAlign="center">
-                Не удалось подключиться к API. Проверьте токен авторизации в файле .env
+              <Text fontSize="16px" color="var(--text-secondary)" textAlign="center">
+                Unable to connect to API. Please check your authorization token in .env file
               </Text>
               {loadError && (
                 <Box bg="#fef2f2" p="12px" borderRadius="8px" w="100%">
@@ -116,6 +114,126 @@ const AppContent: React.FC = () => {
         );
       case 'billing':
         return <BillingPage />;
+      case 'kubernetes':
+        return (
+          <PlaceholderPage
+            title="Kubernetes"
+            description="Manage Kubernetes clusters with auto-scaling, monitoring, and one-click deployments."
+            icon={<LuContainer />}
+          />
+        );
+      case 'images':
+        return (
+          <PlaceholderPage
+            title="Images"
+            description="Manage custom images, snapshots, and templates for your virtual machines."
+            icon={<LuImage />}
+          />
+        );
+      case 'volumes':
+        return (
+          <PlaceholderPage
+            title="Volumes"
+            description="Attach additional block storage volumes to your virtual machines."
+            icon={<LuHardDrive />}
+          />
+        );
+      case 'snapshots':
+        return (
+          <PlaceholderPage
+            title="Snapshots"
+            description="Create and manage snapshots of your virtual machines and volumes."
+            icon={<LuCamera />}
+          />
+        );
+      case 'networks':
+        return (
+          <PlaceholderPage
+            title="Networks"
+            description="Configure virtual networks, VPCs, and network isolation for your resources."
+            icon={<LuNetwork />}
+          />
+        );
+      case 'floating-ips':
+        return (
+          <PlaceholderPage
+            title="Floating IPs"
+            description="Manage floating IP addresses that can be assigned to your virtual machines."
+            icon={<LuGlobe />}
+          />
+        );
+      case 'firewalls':
+        return (
+          <PlaceholderPage
+            title="Firewalls"
+            description="Configure firewall rules and security groups to protect your resources."
+            icon={<LuShield />}
+          />
+        );
+      case 'ssh-keys':
+        return (
+          <PlaceholderPage
+            title="SSH Keys"
+            description="Manage SSH keys for secure access to your virtual machines."
+            icon={<LuKey />}
+          />
+        );
+      case 'object-storage':
+        return (
+          <PlaceholderPage
+            title="Object Storage"
+            description="S3-compatible object storage for backups, media, and static assets."
+            icon={<LuDatabase />}
+          />
+        );
+      case 'load-balancers':
+        return (
+          <PlaceholderPage
+            title="Load Balancers"
+            description="Distribute traffic across multiple virtual machines for high availability."
+            icon={<LuActivity />}
+          />
+        );
+      case 'dns':
+        return (
+          <PlaceholderPage
+            title="DNS"
+            description="Manage DNS records and domain names for your services."
+            icon={<LuGlobe />}
+          />
+        );
+      case 'monitoring':
+        return (
+          <PlaceholderPage
+            title="Monitoring"
+            description="Monitor metrics, set up alerts, and track performance of your resources."
+            icon={<LuActivity />}
+          />
+        );
+      case 'marketplace':
+        return (
+          <PlaceholderPage
+            title="Marketplace"
+            description="Deploy pre-configured applications and solutions with one click."
+            icon={<LuShoppingBag />}
+          />
+        );
+      case 'support':
+        return (
+          <PlaceholderPage
+            title="Support"
+            description="Get help, access documentation, and contact our support team."
+            icon={<LuLifeBuoy />}
+          />
+        );
+      case 'settings':
+        return (
+          <PlaceholderPage
+            title="Settings"
+            description="Configure your account, API keys, billing settings, and preferences."
+            icon={<LuSettings />}
+          />
+        );
       default:
         return <DashboardPage />;
     }
@@ -123,30 +241,13 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      {loadError === 'DEMO_MODE' && (
-        <Box
-          position="fixed"
-          top="0"
-          left="0"
-          right="0"
-          bg="orange.500"
-          color="white"
-          p="8px"
-          textAlign="center"
-          fontSize="14px"
-          fontWeight="600"
-          zIndex={9999}
-        >
-          ⚠️ Демо-режим (API недоступен) — Разверните на VPS для реальных данных
-        </Box>
-      )}
-      <Box pt={loadError === 'DEMO_MODE' ? '40px' : '0'}>
-        <Layout>{renderPage()}</Layout>
-        <VMCreateWizard
-          isOpen={isCreateVMOpen}
-          onClose={() => setIsCreateVMOpen(false)}
-        />
-      </Box>
+      <Layout>
+        {renderPage()}
+      </Layout>
+      <VMCreateWizard
+        isOpen={isCreateVMOpen}
+        onClose={() => setIsCreateVMOpen(false)}
+      />
     </>
   );
 };

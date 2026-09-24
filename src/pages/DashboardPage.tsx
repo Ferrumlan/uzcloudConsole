@@ -4,7 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { api } from '../api/client';
 import { ModernCard } from '../components/ModernCard';
 import type { VirtualMachine, AccountBalance, Invoice } from '../api/types';
-import { LuServer, LuPlay, LuSquare, LuWallet, LuActivity } from 'react-icons/lu';
+import { LuServer, LuCpu, LuMemoryStick, LuHardDrive, LuActivity, LuDollarSign, LuTrendingUp } from 'react-icons/lu';
 
 export const DashboardPage: React.FC = () => {
   const [vms, setVms] = useState<VirtualMachine[]>([]);
@@ -16,62 +16,16 @@ export const DashboardPage: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        console.log('Loading dashboard data with VM details...');
         const [vmsData, balanceData, invoicesData] = await Promise.all([
-          api.virtualMachines.list(undefined, true), // loadDetails=true для полной конфигурации
+          api.virtualMachines.list(),
           api.billing.getBalance(),
           api.billing.getInvoices(),
         ]);
-        console.log('Dashboard data loaded:', { vms: vmsData.length, balance: balanceData, invoices: invoicesData.length });
         setVms(vmsData);
         setBalance(balanceData);
         setInvoices(invoicesData);
       } catch (err) {
-        console.error('Dashboard load error, using demo data:', err);
-        // Демо данные для preview
-        setVms([
-          {
-            id: 1,
-            slug: 'web-server-01',
-            name: 'Web Server 01',
-            hostname: 'web-01.uzcloud.uz',
-            status: 'running',
-            cpu: 4,
-            ram: 8,
-            disk: 100,
-            ip_address: '10.0.1.15',
-            zone: 'Tashkent-1',
-            template: 'Ubuntu 22.04 LTS',
-            project_slug: 'default',
-            created_at: '2026-01-15T10:30:00Z',
-          },
-          {
-            id: 2,
-            slug: 'api-server-01',
-            name: 'API Server 01',
-            hostname: 'api-01.uzcloud.uz',
-            status: 'running',
-            cpu: 8,
-            ram: 16,
-            disk: 200,
-            ip_address: '10.0.1.22',
-            zone: 'Tashkent-1',
-            template: 'Ubuntu 22.04 LTS',
-            project_slug: 'default',
-            created_at: '2026-02-20T14:20:00Z',
-          },
-        ]);
-        setBalance({ balance: 1245000, currency: 'UZS' });
-        setInvoices([
-          {
-            id: 1,
-            invoice_number: 'INV-2026-09',
-            date: '2026-09-01',
-            total: 387200,
-            status: 'paid',
-            currency: 'UZS',
-          },
-        ]);
+        console.error('Dashboard load error:', err);
       } finally {
         setLoading(false);
       }
@@ -79,90 +33,58 @@ export const DashboardPage: React.FC = () => {
     loadData();
   }, []);
 
-  const formatCurrency = (amount: number, currency: string = 'UZS') => {
-    return new Intl.NumberFormat('uz-UZ').format(amount) + (currency === 'UZS' ? ' сўм' : ` ${currency}`);
-  };
-
   const runningVMs = vms.filter(vm => vm.status === 'running');
   const stoppedVMs = vms.filter(vm => vm.status === 'stopped');
+  
+  // Mock данные для графиков
+  const cpuUsage = 45;
+  const ramUsage = 62;
+  const storageUsage = 38;
+  const networkTraffic = 125; // GB
+  const monthlyCost = 387.50;
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
 
   return (
     <Box>
       <VStack gap="32px" align="stretch">
+        {/* Header */}
         <VStack gap="8px" align="start">
-          <Heading size="2xl" fontWeight="800" letterSpacing="-0.03em">
-            Обзор
+          <Heading size="2xl" fontWeight="800" letterSpacing="-0.03em" color="var(--text-primary)">
+            Dashboard
           </Heading>
-          <Text fontSize="16px" color="gray.600">
-            Обзор вашей облачной инфраструктуры
+          <Text fontSize="16px" color="var(--text-secondary)">
+            Overview of your cloud infrastructure
           </Text>
         </VStack>
 
         {/* Stats Grid */}
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap="24px">
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap="20px">
           <GridItem>
             <ModernCard hover>
               <HStack gap="16px">
                 <Box
-                  p="16px"
+                  p="14px"
                   borderRadius="12px"
-                  bgGradient="linear(to-br, #3b82f6, #1d4ed8)"
+                  bg="linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
                   color="white"
                 >
-                  <LuServer size={28} />
+                  <LuServer size={24} />
                 </Box>
-                <VStack gap="4px" align="start">
-                  <Text fontSize="14px" fontWeight="500" color="gray.600">
-                    Всего ВМ
+                <VStack gap="4px" align="start" flex={1}>
+                  <Text fontSize="13px" fontWeight="500" color="var(--text-secondary)">
+                    Running VMs
                   </Text>
-                  <Text fontSize="36px" fontWeight="700" letterSpacing="-0.02em">
-                    {vms.length}
-                  </Text>
-                </VStack>
-              </HStack>
-            </ModernCard>
-          </GridItem>
-
-          <GridItem>
-            <ModernCard hover>
-              <HStack gap="16px">
-                <Box
-                  p="16px"
-                  borderRadius="12px"
-                  bgGradient="linear(to-br, #22c55e, #16a34a)"
-                  color="white"
-                >
-                  <LuPlay size={28} />
-                </Box>
-                <VStack gap="4px" align="start">
-                  <Text fontSize="14px" fontWeight="500" color="gray.600">
-                    Работают
-                  </Text>
-                  <Text fontSize="36px" fontWeight="700" letterSpacing="-0.02em">
+                  <Text fontSize="32px" fontWeight="700" letterSpacing="-0.02em" color="var(--text-primary)">
                     {runningVMs.length}
                   </Text>
-                </VStack>
-              </HStack>
-            </ModernCard>
-          </GridItem>
-
-          <GridItem>
-            <ModernCard hover>
-              <HStack gap="16px">
-                <Box
-                  p="16px"
-                  borderRadius="12px"
-                  bgGradient="linear(to-br, #ef4444, #dc2626)"
-                  color="white"
-                >
-                  <LuSquare size={28} />
-                </Box>
-                <VStack gap="4px" align="start">
-                  <Text fontSize="14px" fontWeight="500" color="gray.600">
-                    Остановлены
-                  </Text>
-                  <Text fontSize="36px" fontWeight="700" letterSpacing="-0.02em">
-                    {stoppedVMs.length}
+                  <Text fontSize="12px" color="var(--text-tertiary)">
+                    of {vms.length} total
                   </Text>
                 </VStack>
               </HStack>
@@ -173,52 +95,225 @@ export const DashboardPage: React.FC = () => {
             <ModernCard hover>
               <HStack gap="16px">
                 <Box
-                  p="16px"
+                  p="14px"
                   borderRadius="12px"
-                  bgGradient="linear(to-br, #a855f7, #9333ea)"
+                  bg="linear-gradient(135deg, #10b981 0%, #059669 100%)"
                   color="white"
                 >
-                  <LuWallet size={28} />
+                  <LuCpu size={24} />
                 </Box>
-                <VStack gap="4px" align="start">
-                  <Text fontSize="14px" fontWeight="500" color="gray.600">
-                    Баланс
+                <VStack gap="4px" align="start" flex={1}>
+                  <Text fontSize="13px" fontWeight="500" color="var(--text-secondary)">
+                    CPU Usage
                   </Text>
-                  <Text fontSize="24px" fontWeight="700" letterSpacing="-0.02em">
-                    {balance ? formatCurrency(balance.balance, balance.currency) : '—'}
+                  <Text fontSize="32px" fontWeight="700" letterSpacing="-0.02em" color="var(--text-primary)">
+                    {cpuUsage}%
                   </Text>
+                  <Box w="100%" h="4px" bg="var(--bg-tertiary)" borderRadius="full" overflow="hidden">
+                    <Box w={`${cpuUsage}%`} h="100%" bg="linear-gradient(90deg, #10b981 0%, #059669 100%)" />
+                  </Box>
+                </VStack>
+              </HStack>
+            </ModernCard>
+          </GridItem>
+
+          <GridItem>
+            <ModernCard hover>
+              <HStack gap="16px">
+                <Box
+                  p="14px"
+                  borderRadius="12px"
+                  bg="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
+                  color="white"
+                >
+                  <LuMemoryStick size={24} />
+                </Box>
+                <VStack gap="4px" align="start" flex={1}>
+                  <Text fontSize="13px" fontWeight="500" color="var(--text-secondary)">
+                    RAM Usage
+                  </Text>
+                  <Text fontSize="32px" fontWeight="700" letterSpacing="-0.02em" color="var(--text-primary)">
+                    {ramUsage}%
+                  </Text>
+                  <Box w="100%" h="4px" bg="var(--bg-tertiary)" borderRadius="full" overflow="hidden">
+                    <Box w={`${ramUsage}%`} h="100%" bg="linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%)" />
+                  </Box>
+                </VStack>
+              </HStack>
+            </ModernCard>
+          </GridItem>
+
+          <GridItem>
+            <ModernCard hover>
+              <HStack gap="16px">
+                <Box
+                  p="14px"
+                  borderRadius="12px"
+                  bg="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                  color="white"
+                >
+                  <LuDollarSign size={24} />
+                </Box>
+                <VStack gap="4px" align="start" flex={1}>
+                  <Text fontSize="13px" fontWeight="500" color="var(--text-secondary)">
+                    Monthly Cost
+                  </Text>
+                  <Text fontSize="32px" fontWeight="700" letterSpacing="-0.02em" color="var(--text-primary)">
+                    {formatCurrency(monthlyCost)}
+                  </Text>
+                  <HStack gap="4px">
+                    <LuTrendingUp size={12} color="#10b981" />
+                    <Text fontSize="12px" color="#10b981" fontWeight="600">
+                      +12%
+                    </Text>
+                  </HStack>
                 </VStack>
               </HStack>
             </ModernCard>
           </GridItem>
         </Grid>
 
-        {/* Recent Invoices */}
-        <ModernCard title="Последние счета" icon={<LuActivity size={24} />}>
+        {/* Resource Usage */}
+        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap="20px">
+          <GridItem>
+            <ModernCard title="Resource Usage" icon={<LuActivity size={20} />}>
+              <VStack gap="20px" align="stretch">
+                <VStack gap="8px" align="stretch">
+                  <HStack justify="space-between">
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      Storage Usage
+                    </Text>
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      {storageUsage}%
+                    </Text>
+                  </HStack>
+                  <Box w="100%" h="8px" bg="var(--bg-tertiary)" borderRadius="full" overflow="hidden">
+                    <Box 
+                      w={`${storageUsage}%`} 
+                      h="100%" 
+                      bg="linear-gradient(90deg, #f59e0b 0%, #d97706 100%)"
+                      borderRadius="full"
+                    />
+                  </Box>
+                  <Text fontSize="12px" color="var(--text-tertiary)">
+                    380 GB of 1 TB used
+                  </Text>
+                </VStack>
+
+                <VStack gap="8px" align="stretch">
+                  <HStack justify="space-between">
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      Network Traffic
+                    </Text>
+                    <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                      {networkTraffic} GB
+                    </Text>
+                  </HStack>
+                  <Box w="100%" h="8px" bg="var(--bg-tertiary)" borderRadius="full" overflow="hidden">
+                    <Box 
+                      w="62%" 
+                      h="100%" 
+                      bg="linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)"
+                      borderRadius="full"
+                    />
+                  </Box>
+                  <Text fontSize="12px" color="var(--text-tertiary)">
+                    62% of monthly limit
+                  </Text>
+                </VStack>
+              </VStack>
+            </ModernCard>
+          </GridItem>
+
+          <GridItem>
+            <ModernCard title="Recent Activity" icon={<LuActivity size={20} />}>
+              <VStack gap="12px" align="stretch">
+                {vms.slice(0, 5).map((vm) => (
+                  <HStack 
+                    key={vm.id}
+                    p="12px"
+                    borderRadius="8px"
+                    bg="var(--bg-secondary)"
+                    _hover={{ bg: 'var(--bg-tertiary)' }}
+                    transition="all 0.2s"
+                  >
+                    <Box
+                      p="8px"
+                      borderRadius="8px"
+                      bg={vm.status === 'running' ? '#dcfce7' : '#fee2e2'}
+                      color={vm.status === 'running' ? '#16a34a' : '#dc2626'}
+                    >
+                      <LuServer size={16} />
+                    </Box>
+                    <VStack gap="2px" align="start" flex={1}>
+                      <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                        {vm.name}
+                      </Text>
+                      <Text fontSize="12px" color="var(--text-tertiary)">
+                        {vm.status === 'running' ? 'Started' : 'Stopped'} 2 hours ago
+                      </Text>
+                    </VStack>
+                    <Badge
+                      colorPalette={vm.status === 'running' ? 'success' : 'danger'}
+                      variant="subtle"
+                      size="sm"
+                      borderRadius="6px"
+                      px="8px"
+                      py="4px"
+                      fontWeight="600"
+                    >
+                      {vm.status === 'running' ? 'Running' : 'Stopped'}
+                    </Badge>
+                  </HStack>
+                ))}
+              </VStack>
+            </ModernCard>
+          </GridItem>
+        </Grid>
+
+        {/* VMs Overview */}
+        <ModernCard title="Virtual Machines" icon={<LuServer size={20} />}>
           <VStack gap="12px" align="stretch">
-            {invoices.slice(0, 4).map((invoice) => (
+            {vms.slice(0, 6).map((vm) => (
               <HStack
-                key={invoice.id}
+                key={vm.id}
                 p="16px"
                 borderRadius="12px"
                 border="1px solid"
-                borderColor="gray.200"
-                _hover={{ bg: 'gray.50' }}
+                borderColor="var(--border-color)"
+                _hover={{ 
+                  borderColor: 'var(--brand-500)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                }}
                 transition="all 0.2s"
+                cursor="pointer"
               >
+                <Box
+                  p="10px"
+                  borderRadius="10px"
+                  bg="linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)"
+                  color="#2563eb"
+                >
+                  <LuServer size={20} />
+                </Box>
                 <VStack gap="2px" align="start" flex={1}>
-                  <Text fontSize="15px" fontWeight="600" fontFamily="mono">
-                    {invoice.invoice_number}
+                  <Text fontSize="15px" fontWeight="600" color="var(--text-primary)">
+                    {vm.name}
                   </Text>
-                  <Text fontSize="13px" color="gray.500">
-                    {invoice.date}
+                  <Text fontSize="13px" color="var(--text-tertiary)">
+                    {vm.cpu} vCPU · {vm.ram} GB RAM · {vm.disk} GB Disk
                   </Text>
                 </VStack>
-                <Text fontSize="15px" fontWeight="600">
-                  {formatCurrency(invoice.total, invoice.currency)}
-                </Text>
+                <VStack gap="2px" align="end">
+                  <Text fontSize="14px" fontWeight="600" color="var(--text-primary)">
+                    {vm.ip_address || '—'}
+                  </Text>
+                  <Text fontSize="12px" color="var(--text-tertiary)">
+                    {vm.zone}
+                  </Text>
+                </VStack>
                 <Badge
-                  colorPalette={invoice.status === 'paid' ? 'success' : invoice.status === 'pending' ? 'warning' : 'danger'}
+                  colorPalette={vm.status === 'running' ? 'success' : 'danger'}
                   variant="subtle"
                   size="lg"
                   borderRadius="8px"
@@ -226,7 +321,7 @@ export const DashboardPage: React.FC = () => {
                   py="6px"
                   fontWeight="600"
                 >
-                  {invoice.status === 'paid' ? 'Оплачен' : invoice.status === 'pending' ? 'Ожидает' : 'Просрочен'}
+                  {vm.status === 'running' ? 'Running' : 'Stopped'}
                 </Badge>
               </HStack>
             ))}

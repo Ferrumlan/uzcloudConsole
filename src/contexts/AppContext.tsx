@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User, Project } from '../api/types';
 import { api } from '../api/client';
-
-type Page = 'dashboard' | 'vms' | 'billing';
+import type { Page } from '../components/Layout';
 
 interface AppContextType {
   isAuthenticated: boolean;

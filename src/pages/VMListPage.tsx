@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Box, VStack, HStack, Text, Heading, Input, Badge } from '@chakra-ui/react';
+import { Box, VStack, HStack, Text, Heading, Input, Grid, GridItem, Badge, Button } from '@chakra-ui/react';
 import { useApp } from '../contexts/AppContext';
 import { api } from '../api/client';
 import { ModernCard } from '../components/ModernCard';
-import { ModernButton } from '../components/ModernButton';
 import type { VirtualMachine } from '../api/types';
-import { LuPlus, LuPlay, LuSquare, LuRotateCw, LuServer, LuSearch } from 'react-icons/lu';
+import { LuPlus, LuPlay, LuSquare, LuRotateCw, LuServer, LuSearch, LuTerminal, LuHardDrive, LuCamera, LuTrash2 } from 'react-icons/lu';
 
 interface VMListPageProps {
   onSelectVM: (vm: VirtualMachine) => void;
@@ -20,60 +19,10 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
   const loadVMs = async () => {
     setLoading(true);
     try {
-      console.log('Loading VMs with full details...');
-      const data = await api.virtualMachines.list(undefined, true);
-      console.log('Loaded VMs:', data);
+      const data = await api.virtualMachines.list();
       setVms(data);
     } catch (err) {
-      console.error('Failed to load VMs, using demo data:', err);
-      // Демо данные для preview
-      setVms([
-        {
-          id: 1,
-          slug: 'web-server-01',
-          name: 'Web Server 01',
-          hostname: 'web-01.uzcloud.uz',
-          status: 'running',
-          cpu: 4,
-          ram: 8,
-          disk: 100,
-          ip_address: '10.0.1.15',
-          zone: 'Tashkent-1',
-          template: 'Ubuntu 22.04 LTS',
-          project_slug: 'default',
-          created_at: '2026-01-15T10:30:00Z',
-        },
-        {
-          id: 2,
-          slug: 'api-server-01',
-          name: 'API Server 01',
-          hostname: 'api-01.uzcloud.uz',
-          status: 'running',
-          cpu: 8,
-          ram: 16,
-          disk: 200,
-          ip_address: '10.0.1.22',
-          zone: 'Tashkent-1',
-          template: 'Ubuntu 22.04 LTS',
-          project_slug: 'default',
-          created_at: '2026-02-20T14:20:00Z',
-        },
-        {
-          id: 3,
-          slug: 'db-server-01',
-          name: 'Database Server',
-          hostname: 'db-01.uzcloud.uz',
-          status: 'stopped',
-          cpu: 16,
-          ram: 32,
-          disk: 500,
-          ip_address: '10.0.1.30',
-          zone: 'Tashkent-1',
-          template: 'CentOS 9',
-          project_slug: 'default',
-          created_at: '2026-03-10T08:15:00Z',
-        },
-      ]);
+      console.error('Failed to load VMs:', err);
     } finally {
       setLoading(false);
     }
@@ -102,7 +51,7 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
            (vm.ip_address && vm.ip_address.includes(searchQuery));
   });
 
-  const statusColors: Record<string, string> = {
+  const statusColors = {
     running: 'success',
     stopped: 'danger',
     starting: 'warning',
@@ -111,122 +60,243 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
     deploying: 'info',
   };
 
+  // Mock данные для стоимости
+  const getMonthlyCost = (vm: VirtualMachine) => {
+    const baseCost = vm.cpu * 10 + vm.ram * 5 + vm.disk * 0.5;
+    return baseCost;
+  };
+
+  const getHourlyCost = (vm: VirtualMachine) => {
+    return getMonthlyCost(vm) / 730; // 730 hours in a month
+  };
+
   return (
     <Box>
       <VStack gap="32px" align="stretch">
+        {/* Header */}
         <HStack justify="space-between" align="center">
           <VStack gap="8px" align="start">
-            <Heading size="2xl" fontWeight="800" letterSpacing="-0.03em">
-              Виртуальные машины
+            <Heading size="2xl" fontWeight="800" letterSpacing="-0.03em" color="var(--text-primary)">
+              Virtual Machines
             </Heading>
-            <Text fontSize="16px" color="gray.600">
-              Управление виртуальными машинами
+            <Text fontSize="16px" color="var(--text-secondary)">
+              Manage and monitor your virtual machines
             </Text>
           </VStack>
-          <ModernButton variant="gradient" size="lg" icon={<LuPlus size={18} />} onClick={onCreateVM}>
-            Создать ВМ
-          </ModernButton>
+          <Button
+            size="lg"
+            bg="linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)"
+            color="white"
+            borderRadius="10px"
+            px="20px"
+            fontWeight="600"
+            onClick={onCreateVM}
+            _hover={{
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)',
+            }}
+          >
+            <LuPlus size={18} />
+            Create VM
+          </Button>
         </HStack>
 
         {/* Search */}
         <ModernCard>
           <HStack gap="12px">
             <Box position="relative" flex={1}>
-              <Box position="absolute" left="16px" top="50%" transform="translateY(-50%)" color="gray.400">
+              <Box position="absolute" left="16px" top="50%" transform="translateY(-50%)" color="var(--text-tertiary)">
                 <LuSearch size={18} />
               </Box>
               <Input
-                placeholder="Поиск по имени, hostname или IP..."
+                placeholder="Search by name, hostname, or IP..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 size="lg"
                 pl="48px"
-                borderRadius="12px"
+                borderRadius="10px"
                 borderWidth="2px"
+                borderColor="var(--border-color)"
                 _focus={{
-                  borderColor: '#0ea5e9',
-                  boxShadow: '0 0 0 3px rgba(14, 165, 233, 0.1)',
+                  borderColor: '#3b82f6',
+                  boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
                 }}
               />
             </Box>
           </HStack>
         </ModernCard>
 
-        {/* VM List */}
-        <VStack gap="12px" align="stretch">
+        {/* VM Cards Grid */}
+        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap="20px">
           {filteredVMs.map((vm) => (
-            <ModernCard key={vm.id} hover onClick={() => onSelectVM(vm)}>
-              <HStack gap="16px">
-                <Box
-                  p="12px"
-                  borderRadius="12px"
-                  bgGradient="linear(to-br, #e0f2fe, #f3e8ff)"
-                  color="#0284c7"
-                >
-                  <LuServer size={24} />
-                </Box>
-                <VStack gap="2px" align="start" flex={1}>
-                  <Text fontSize="16px" fontWeight="600" color="gray.900">
-                    {vm.name}
-                  </Text>
-                  <Text fontSize="13px" color="gray.500" fontFamily="mono">
-                    {vm.hostname}
-                  </Text>
-                </VStack>
-                <VStack gap="2px" align="end">
-                  <Text fontSize="14px" fontWeight="600" color="gray.700">
-                    {vm.cpu} vCPU · {vm.ram} GB
-                  </Text>
-                  <Text fontSize="13px" fontFamily="mono" color="gray.600">
-                    {vm.ip_address || '—'}
-                  </Text>
-                </VStack>
-                <Badge
-                  colorPalette={statusColors[vm.status]}
-                  variant="subtle"
-                  size="lg"
-                  borderRadius="8px"
-                  px="12px"
-                  py="6px"
-                  fontWeight="600"
-                >
-                  {vm.status === 'running' ? 'Работает' : vm.status === 'stopped' ? 'Остановлена' : vm.status}
-                </Badge>
-                <HStack gap="4px">
-                  {vm.status === 'stopped' && (
-                    <Box onClick={(e) => e.stopPropagation()}>
-                      <ModernButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVMAction('start', vm.slug)}
+            <GridItem key={vm.id}>
+              <ModernCard hover onClick={() => onSelectVM(vm)}>
+                <VStack gap="16px" align="stretch">
+                  {/* Header */}
+                  <HStack justify="space-between" align="start">
+                    <HStack gap="12px">
+                      <Box
+                        p="12px"
+                        borderRadius="12px"
+                        bg="linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)"
+                        color="#2563eb"
                       >
-                        <LuPlay size={16} />
-                      </ModernButton>
-                    </Box>
-                  )}
-                  {vm.status === 'running' && (
-                    <HStack gap="4px" onClick={(e) => e.stopPropagation()}>
-                      <ModernButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVMAction('stop', vm.slug)}
-                      >
-                        <LuSquare size={16} />
-                      </ModernButton>
-                      <ModernButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleVMAction('reboot', vm.slug)}
-                      >
-                        <LuRotateCw size={16} />
-                      </ModernButton>
+                        <LuServer size={24} />
+                      </Box>
+                      <VStack gap="4px" align="start">
+                        <Text fontSize="18px" fontWeight="700" color="var(--text-primary)">
+                          {vm.name}
+                        </Text>
+                        <Text fontSize="13px" color="var(--text-tertiary)" fontFamily="mono">
+                          {vm.hostname}
+                        </Text>
+                      </VStack>
                     </HStack>
-                  )}
-                </HStack>
-              </HStack>
-            </ModernCard>
+                    <Badge
+                      colorPalette={statusColors[vm.status]}
+                      variant="subtle"
+                      size="lg"
+                      borderRadius="8px"
+                      px="12px"
+                      py="6px"
+                      fontWeight="600"
+                    >
+                      {vm.status === 'running' ? 'Running' : vm.status === 'stopped' ? 'Stopped' : vm.status}
+                    </Badge>
+                  </HStack>
+
+                  {/* Specs */}
+                  <Grid templateColumns="repeat(3, 1fr)" gap="12px">
+                    <Box p="12px" borderRadius="8px" bg="var(--bg-secondary)">
+                      <VStack gap="4px" align="start">
+                        <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="600" textTransform="uppercase">
+                          CPU
+                        </Text>
+                        <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
+                          {vm.cpu} vCPU
+                        </Text>
+                      </VStack>
+                    </Box>
+                    <Box p="12px" borderRadius="8px" bg="var(--bg-secondary)">
+                      <VStack gap="4px" align="start">
+                        <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="600" textTransform="uppercase">
+                          RAM
+                        </Text>
+                        <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
+                          {vm.ram} GB
+                        </Text>
+                      </VStack>
+                    </Box>
+                    <Box p="12px" borderRadius="8px" bg="var(--bg-secondary)">
+                      <VStack gap="4px" align="start">
+                        <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="600" textTransform="uppercase">
+                          Storage
+                        </Text>
+                        <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
+                          {vm.disk} GB
+                        </Text>
+                      </VStack>
+                    </Box>
+                  </Grid>
+
+                  {/* IPs */}
+                  <VStack gap="8px" align="stretch">
+                    <HStack justify="space-between">
+                      <Text fontSize="13px" color="var(--text-tertiary)">Public IP</Text>
+                      <Text fontSize="13px" fontWeight="600" color="var(--text-primary)" fontFamily="mono">
+                        {vm.ip_address || '—'}
+                      </Text>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text fontSize="13px" color="var(--text-tertiary)">Region</Text>
+                      <Text fontSize="13px" fontWeight="600" color="var(--text-primary)">
+                        {vm.zone}
+                      </Text>
+                    </HStack>
+                  </VStack>
+
+                  {/* Pricing */}
+                  <HStack justify="space-between" p="12px" borderRadius="8px" bg="var(--bg-secondary)">
+                    <VStack gap="2px" align="start">
+                      <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="600">
+                        HOURLY
+                      </Text>
+                      <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
+                        ${getHourlyCost(vm).toFixed(4)}
+                      </Text>
+                    </VStack>
+                    <VStack gap="2px" align="end">
+                      <Text fontSize="11px" color="var(--text-tertiary)" fontWeight="600">
+                        MONTHLY
+                      </Text>
+                      <Text fontSize="16px" fontWeight="700" color="var(--text-primary)">
+                        ${getMonthlyCost(vm).toFixed(2)}
+                      </Text>
+                    </VStack>
+                  </HStack>
+
+                  {/* Quick Actions */}
+                  <HStack gap="8px" justify="space-between">
+                    {vm.status === 'stopped' && (
+                      <Button
+                        size="sm"
+                        colorPalette="success"
+                        variant="subtle"
+                        borderRadius="8px"
+                        onClick={(e) => { e.stopPropagation(); handleVMAction('start', vm.slug); }}
+                      >
+                        <LuPlay size={14} />
+                        Start
+                      </Button>
+                    )}
+                    {vm.status === 'running' && (
+                      <>
+                        <Button
+                          size="sm"
+                          colorPalette="danger"
+                          variant="subtle"
+                          borderRadius="8px"
+                          onClick={(e) => { e.stopPropagation(); handleVMAction('stop', vm.slug); }}
+                        >
+                          <LuSquare size={14} />
+                          Stop
+                        </Button>
+                        <Button
+                          size="sm"
+                          colorPalette="warning"
+                          variant="subtle"
+                          borderRadius="8px"
+                          onClick={(e) => { e.stopPropagation(); handleVMAction('reboot', vm.slug); }}
+                        >
+                          <LuRotateCw size={14} />
+                          Restart
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      borderRadius="8px"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <LuTerminal size={14} />
+                      Console
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="subtle"
+                      borderRadius="8px"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <LuCamera size={14} />
+                      Snapshot
+                    </Button>
+                  </HStack>
+                </VStack>
+              </ModernCard>
+            </GridItem>
           ))}
-        </VStack>
+        </Grid>
 
         {filteredVMs.length === 0 && (
           <ModernCard>
@@ -234,17 +304,17 @@ export const VMListPage: React.FC<VMListPageProps> = ({ onSelectVM, onCreateVM }
               <Box
                 p="24px"
                 borderRadius="full"
-                bgGradient="linear(to-br, #f1f5f9, #e2e8f0)"
-                color="gray.400"
+                bg="var(--bg-tertiary)"
+                color="var(--text-tertiary)"
               >
                 <LuServer size={48} />
               </Box>
               <VStack gap="8px">
-                <Text fontSize="18px" fontWeight="600" color="gray.700">
-                  Виртуальные машины не найдены
+                <Text fontSize="18px" fontWeight="600" color="var(--text-primary)">
+                  No virtual machines found
                 </Text>
-                <Text fontSize="14px" color="gray.500">
-                  {searchQuery ? 'Попробуйте изменить поисковый запрос' : 'Создайте первую виртуальную машину'}
+                <Text fontSize="14px" color="var(--text-secondary)">
+                  {searchQuery ? 'Try adjusting your search' : 'Create your first virtual machine to get started'}
                 </Text>
               </VStack>
             </VStack>
