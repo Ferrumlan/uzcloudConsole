@@ -98,9 +98,8 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
       if (!formData.billingCycle && billingCyclesData.length > 0) {
         setFormData(prev => ({ ...prev, billingCycle: billingCyclesData[0].slug }));
       }
-      if (!formData.networkPlan && networkPlansData.length > 0) {
-        setFormData(prev => ({ ...prev, networkPlan: networkPlansData[0].slug }));
-      }
+      // Network plan определяется автоматически на основе network_type и region
+      // Не устанавливаем по умолчанию, будет вычисляться при создании
 
       console.log('API Data loaded:', {
         regions: regionsData.length,
@@ -160,7 +159,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.image || !formData.instanceConfig || !formData.location || !formData.project || !formData.storageCategory || !formData.billingCycle || !formData.networkPlan) {
+    if (!formData.name || !formData.image || !formData.instanceConfig || !formData.location || !formData.project || !formData.storageCategory || !formData.billingCycle) {
       setCreateError('Заполните все обязательные поля');
       return;
     }
@@ -169,6 +168,17 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
     setCreateError(null);
 
     try {
+      // Автоматически определяем network plan на основе network_type и region
+      let networkPlan = '';
+      if (formData.networkType === 'Isolated') {
+        // Для Isolated используем 'isolated' для production, 'default-isolated' для staging
+        networkPlan = formData.location === 'staging' ? 'default-isolated' : 'isolated';
+      } else if (formData.networkType === 'VPC') {
+        // VPC пока не поддерживается, используем isolated как fallback
+        networkPlan = 'isolated';
+        console.warn('VPC network type not fully supported, falling back to isolated');
+      }
+
       // Используем реальные slug из API
       const vmData = {
         name: formData.name,
@@ -180,7 +190,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
         plan: formData.instanceConfig, // slug из plans API
         disk_size: formData.volumeSize,
         network_type: formData.networkType, // 'Isolated' или 'VPC'
-        network_plan: formData.networkPlan, // slug из network plans API
+        network_plan: networkPlan, // автоматически определяется
         public_ip: formData.publicIp, // boolean, преобразуется в массив в client.ts
         storage_category: formData.storageCategory, // slug из storage categories API
         billing_cycle: formData.billingCycle, // slug из billing cycles API
@@ -827,52 +837,6 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 </GridItem>
               </Grid>
 
-              <Text fontSize="14px" fontWeight="600" color="gray.700" mt="16px">
-                Выберите сетевой план
-              </Text>
-              <Grid templateColumns="repeat(auto-fill, minmax(200px, 1fr))" gap="16px">
-                {networkPlans.map((plan) => (
-                  <GridItem key={plan.slug}>
-                    <Box
-                      p="20px"
-                      borderRadius="12px"
-                      borderWidth="2px"
-                      borderColor={formData.networkPlan === plan.slug ? '#0ea5e9' : 'gray.200'}
-                      bg={formData.networkPlan === plan.slug ? '#f0f9ff' : 'white'}
-                      cursor="pointer"
-                      onClick={() => setFormData({ ...formData, networkPlan: plan.slug })}
-                      transition="all 0.2s"
-                      _hover={{
-                        borderColor: '#38bdf8',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                      }}
-                    >
-                      <VStack gap="12px" align="start">
-                        <HStack gap="12px">
-                          <Box
-                            p="12px"
-                            borderRadius="10px"
-                            bg={formData.networkPlan === plan.slug ? 'brand.100' : 'gray.100'}
-                            color={formData.networkPlan === plan.slug ? 'brand.600' : 'gray.600'}
-                          >
-                            <LuNetwork size={24} />
-                          </Box>
-                          <VStack gap="4px" align="start">
-                            <Text fontSize="18px" fontWeight="700" color="gray.900">
-                              {plan.name}
-                            </Text>
-                            <Text fontSize="13px" color="gray.600">
-                              {plan.network_type}
-                            </Text>
-                          </VStack>
-                        </HStack>
-                      </VStack>
-                    </Box>
-                  </GridItem>
-                ))}
-              </Grid>
-
               <div 
                 style={{
                   padding: '16px',
@@ -982,7 +946,7 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                   <HStack justify="space-between">
                     <Text fontSize="14px" color="gray.600">Network:</Text>
                     <Text fontSize="14px" fontWeight="600">
-                      {networkPlans.find(p => p.slug === formData.networkPlan)?.name || formData.networkType} {formData.publicIp ? '+ Public IP' : ''}
+                      {formData.networkType} {formData.publicIp ? '+ Public IP' : ''}
                     </Text>
                   </HStack>
                 </VStack>
