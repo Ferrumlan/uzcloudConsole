@@ -37,16 +37,16 @@ function normalizeVM(apiVM: any): VirtualMachine {
   // API хранит реальный размер в formatted_storage, а не в storage
   let disk = 0;
   
-  if (offering.formatted_storage) {
-    // Парсим "50.0 (GB)" → 50
+  // Сначала пытаемся получить из formatted_storage
+  if (offering.formatted_storage && offering.formatted_storage !== '0') {
     const match = offering.formatted_storage.match(/^([\d.]+)/);
     if (match) {
       disk = parseFloat(match[1]);
     }
   }
   
-  // Fallback на другие поля
-  if (!disk) {
+  // Если не получилось, пробуем другие поля
+  if (!disk || disk === 0) {
     disk = parseInt(
       offering.storage || 
       offering.disk || 
@@ -61,6 +61,12 @@ function normalizeVM(apiVM: any): VirtualMachine {
       10
     ) || 0;
   }
+  
+  console.log('Disk extraction:', { 
+    formatted_storage: offering.formatted_storage, 
+    storage: offering.storage,
+    final_disk: disk 
+  });
   
   console.log('Extracted disk value:', disk, 'from formatted_storage:', offering.formatted_storage);
 
