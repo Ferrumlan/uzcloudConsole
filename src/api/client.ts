@@ -29,22 +29,31 @@ function normalizeVM(apiVM: any): VirtualMachine {
 
   // Извлекаем IP адрес из ipaddresses массива
   let ip_address: string | null = null;
+  let public_ip: string | null = null;
+  
   if (apiVM.ipaddresses && Array.isArray(apiVM.ipaddresses) && apiVM.ipaddresses.length > 0) {
     console.log('IP addresses found:', apiVM.ipaddresses.length);
-    // Ищем первый публичный IP
+    // Ищем публичный IP
     const publicIP = apiVM.ipaddresses.find((ip: any) => ip.is_public || ip.ip_type === 'public');
     if (publicIP) {
-      ip_address = publicIP.ip_address || publicIP.ip || null;
+      public_ip = publicIP.ip_address || publicIP.ip || null;
+      ip_address = public_ip;
     } else {
-      // Если нет публичного, берём первый
+      // Если нет публичного, берём первый приватный
       ip_address = apiVM.ipaddresses[0]?.ip_address || apiVM.ipaddresses[0]?.ip || null;
     }
   }
   
   // Fallback на public_ip/private_ip
-  if (!ip_address) {
-    ip_address = apiVM.public_ip || apiVM.private_ip || null;
+  if (!public_ip) {
+    public_ip = apiVM.public_ip || null;
   }
+  if (!ip_address) {
+    ip_address = apiVM.private_ip || public_ip || null;
+  }
+  
+  // Извлекаем storage volume из offering или blockstorage
+  const storage_volume = parseInt(offering.storage || apiVM.storage_volume || apiVM.blockstorage?.size || '0', 10) || disk;
 
   // Извлекаем статус (state не status!)
   const status = (apiVM.state?.toLowerCase() || 
@@ -75,7 +84,9 @@ function normalizeVM(apiVM: any): VirtualMachine {
     cpu: cpu,
     ram: ram,
     disk: disk,
+    storage_volume: storage_volume,
     ip_address: ip_address,
+    public_ip: public_ip,
     zone: zone,
     template: template,
     project_slug: apiVM.project?.slug || apiVM.project || 'default',

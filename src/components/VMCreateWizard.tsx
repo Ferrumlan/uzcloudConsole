@@ -817,46 +817,53 @@ export const VMCreateWizard: React.FC<VMCreateWizardProps> = ({ isOpen, onClose 
                 </GridItem>
               </Grid>
 
-              <Box 
-                p="16px" 
-                borderRadius="12px" 
-                border="2px solid" 
-                borderColor={formData.publicIp ? "brand.500" : "gray.200"}
-                bg={formData.publicIp ? "brand.50" : "white"}
-                cursor="pointer"
+              <div 
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: `2px solid ${formData.publicIp ? '#0ea5e9' : '#e5e7eb'}`,
+                  backgroundColor: formData.publicIp ? '#f0f9ff' : 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
                 onClick={() => setFormData({ ...formData, publicIp: !formData.publicIp })}
-                transition="all 0.2s"
-                _hover={{
-                  borderColor: formData.publicIp ? "brand.600" : "gray.300",
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = formData.publicIp ? '#0284c7' : '#d1d5db';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = formData.publicIp ? '#0ea5e9' : '#e5e7eb';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <HStack justify="space-between">
-                  <VStack gap="4px" align="start">
-                    <Text fontSize="14px" fontWeight="600" color="gray.900">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
                       Публичный IP адрес
-                    </Text>
-                    <Text fontSize="13px" color="gray.600">
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
                       Назначить публичный IP для доступа из интернета
-                    </Text>
-                  </VStack>
-                  <Box
-                    w="28px"
-                    h="28px"
-                    borderRadius="8px"
-                    border="2px solid"
-                    borderColor={formData.publicIp ? "brand.500" : "gray.300"}
-                    bg={formData.publicIp ? "brand.500" : "white"}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    transition="all 0.2s"
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '8px',
+                      border: `2px solid ${formData.publicIp ? '#0ea5e9' : '#d1d5db'}`,
+                      backgroundColor: formData.publicIp ? '#0ea5e9' : 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s',
+                    }}
                   >
                     {formData.publicIp && <LuCheck size={18} color="white" strokeWidth={3} />}
-                  </Box>
-                </HStack>
-              </Box>
+                  </div>
+                </div>
+              </div>
             </VStack>
           )}
 
