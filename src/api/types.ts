@@ -9,7 +9,9 @@ export interface VirtualMachine {
   cpu: number;
   ram: number;
   disk: number;
+  storage_volume?: number;
   ip_address: string | null;
+  public_ip?: string | null;
   zone: string;
   template: string;
   project_slug: string;

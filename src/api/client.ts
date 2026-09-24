@@ -29,22 +29,31 @@ function normalizeVM(apiVM: any): VirtualMachine {
 
   // Извлекаем IP адрес из ipaddresses массива
   let ip_address: string | null = null;
+  let public_ip: string | null = null;
+  
   if (apiVM.ipaddresses && Array.isArray(apiVM.ipaddresses) && apiVM.ipaddresses.length > 0) {
     console.log('IP addresses found:', apiVM.ipaddresses.length);
-    // Ищем первый публичный IP
+    // Ищем публичный IP
     const publicIP = apiVM.ipaddresses.find((ip: any) => ip.is_public || ip.ip_type === 'public');
     if (publicIP) {
-      ip_address = publicIP.ip_address || publicIP.ip || null;
+      public_ip = publicIP.ip_address || publicIP.ip || null;
+      ip_address = public_ip;
     } else {
-      // Если нет публичного, берём первый
+      // Если нет публичного, берём первый приватный
       ip_address = apiVM.ipaddresses[0]?.ip_address || apiVM.ipaddresses[0]?.ip || null;
     }
   }
   
   // Fallback на public_ip/private_ip
-  if (!ip_address) {
-    ip_address = apiVM.public_ip || apiVM.private_ip || null;
+  if (!public_ip) {
+    public_ip = apiVM.public_ip || null;
   }
+  if (!ip_address) {
+    ip_address = apiVM.private_ip || public_ip || null;
+  }
+  
+  // Извлекаем storage volume из offering или blockstorage
+  const storage_volume = parseInt(offering.storage || apiVM.storage_volume || apiVM.blockstorage?.size || '0', 10) || disk;
 
   // Извлекаем статус (state не status!)
   const status = (apiVM.state?.toLowerCase() || 
@@ -75,7 +84,9 @@ function normalizeVM(apiVM: any): VirtualMachine {
     cpu: cpu,
     ram: ram,
     disk: disk,
+    storage_volume: storage_volume,
     ip_address: ip_address,
+    public_ip: public_ip,
     zone: zone,
     template: template,
     project_slug: apiVM.project?.slug || apiVM.project || 'default',
@@ -195,6 +206,24 @@ export const api = {
           has_attribute: !!data[0].attribute,
           attribute: data[0].attribute,
           monthly_price: data[0].monthly_price,
+        });
+      }
+      
+      return data;
+    },
+    
+    listNetworkPlans: async () => {
+      const response = await apiRequest<any>('/plans/service/Network');
+      const data = response.data?.data || response.data || [];
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('=== Network Plans API Response ===');
+        console.log('Total network plans:', data.length);
+        console.log('First network plan sample:', {
+          id: data[0].id,
+          slug: data[0].slug,
+          name: data[0].name,
+          network_type: data[0].network_type,
         });
       }
       
