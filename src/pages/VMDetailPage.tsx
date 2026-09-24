@@ -51,7 +51,6 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
   const vmCpu = vm.cpu || 0;
   const vmRam = vm.ram || 0;
   const vmDisk = vm.disk || 0;
-  const vmStorageVolume = vm.storage_volume || vm.disk || 0;
   const vmIp = vm.ip_address || '—';
   const vmPublicIp = vm.public_ip || '—';
   const vmZone = vm.zone || '—';
@@ -189,22 +188,6 @@ export const VMDetailPage: React.FC<VMDetailPageProps> = ({ vm, onBack }) => {
                 </Text>
                 <Text fontSize="20px" fontWeight="700" fontFamily="mono">
                   {vmPublicIp}
-                </Text>
-              </VStack>
-            </HStack>
-          </ModernCard>
-
-          <ModernCard>
-            <HStack gap="12px">
-              <Box p="12px" borderRadius="12px" bgGradient="linear(to-br, #e0e7ff, #c7d2fe)" color="#4338ca">
-                <LuHardDrive size={24} />
-              </Box>
-              <VStack gap="2px" align="start">
-                <Text fontSize="12px" color="gray.500" fontWeight="600" textTransform="uppercase">
-                  Storage Volume
-                </Text>
-                <Text fontSize="20px" fontWeight="700">
-                  {vmStorageVolume} GB
                 </Text>
               </VStack>
             </HStack>
